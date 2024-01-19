@@ -148,6 +148,8 @@ class ChatController extends Controller
         }
     }
 
+    //----------------------------------Broadcast Channel-----------------------------------//
+
     public function loadBroadcastChats()
     {
 
@@ -164,6 +166,53 @@ class ChatController extends Controller
         })
             ->orderBy('created_at', 'desc')
             ->limit(5)
+            ->get();
+
+        return response()->json(['chats' => $chats]);
+    }
+
+    public function sendMsgToChannel(Request $request)
+    {
+
+        $loginUser = Auth::user()->id;
+        $recepeint = 0;
+
+        $file = $request->file('mediaInput');
+
+        if ($request->message && $file) {
+            $filename = time() . '_chat.' . $file->extension();
+            $file->move(public_path('uploads'), $filename);
+            event(new NewChatMessage([$request->message, $filename], $loginUser, $recepeint, Auth::user()->name, now(), 'both'));
+        } elseif ($file) {
+            $filename = time() . '_chat.' . $file->extension();
+            $file->move(public_path('uploads'), $filename);
+            event(new NewChatMessage($filename, $loginUser, $recepeint, Auth::user()->name, now(), 'media'));
+        } elseif ($request->message) {
+            $filename = null;
+            event(new NewChatMessage($request->message, $loginUser, $recepeint, Auth::user()->name, now(), 'text'));
+        }
+
+        $messageStatus = 'read';
+
+        $newMsg = new Chat;
+        $newMsg->sender = $loginUser;
+        $newMsg->receiver = $recepeint;
+        $newMsg->message = $request->message;
+        $newMsg->media = $filename;
+        $newMsg->receipt = $messageStatus;
+        $newMsg->save();
+
+        $msgCount = Chat::where('receiver', $recepeint)->where('receipt', '!=', 'read')->count();
+
+        if ($msgCount > 0) {
+            event(new UnreadMessagesEvent($loginUser, $recepeint, $msgCount));
+        }
+
+        $chats =  Chat::with('sender:id,name')->with('receiver:id,name')->where(function ($query) use ($recepeint, $loginUser) {
+            $query->where('receiver', $recepeint);
+        })
+            ->latest()
+            ->limit(1)
             ->get();
 
         return response()->json(['chats' => $chats]);

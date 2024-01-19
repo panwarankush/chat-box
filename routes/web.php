@@ -31,6 +31,7 @@ Route::group(['middleware'=> 'auth'], function () {
     Route::get('/get-old-messages/{userId}/{offset}/{limit}', [ChatController::class, 'getOldMessages']);
 
     Route::get('broadcast', [ChatController::class,'loadBroadcastChats'])->name('broadcast');
+    Route::post('broadcast', [ChatController::class,'sendMsgToChannel'])->name('broadcast');
 
 });
 

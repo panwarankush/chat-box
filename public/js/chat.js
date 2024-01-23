@@ -130,20 +130,22 @@ $(document).ready(function () {
             },
         });
     });
-
+    //------------------------------message toaster and append messages on receiver side---------------------------------//
     window.Echo.channel("chat").listen("NewChatMessage", (event) => {
         // console.log(userId);
         $("#noMsgFound").hide();
-        if (event.receiver == loginUserId && event.sender == userId) {
-            var notificationMsg;
-            if (event.msgType == "text") {
-                notificationMsg = event.message;
-            } else if (event.msgType == "media") {
-                notificationMsg = "Media File Received!!";
-            } else if (event.msgType == "both") {
-                notificationMsg = event.message[0];
-            }
-
+        var notificationMsg;
+        if (event.msgType == "text") {
+            notificationMsg = event.message;
+        } else if (event.msgType == "media") {
+            notificationMsg = "Media File Received!!";
+        } else if (event.msgType == "both") {
+            notificationMsg = event.message[0];
+        }
+        if (
+            (event.receiver == loginUserId && event.sender == userId) ||
+            (event.receiver == 0 && userId == 0 && event.sender != loginUserId)
+        ) {
             appendMessage(
                 event.senderName,
                 BOT_IMG,
@@ -156,7 +158,10 @@ $(document).ready(function () {
             );
             msgerChat.scrollTop = msgerChat.scrollHeight;
         }
-        if (event.receiver == loginUserId) {
+        if (
+            (event.receiver == loginUserId || event.receiver == 0) &&
+            event.sender != loginUserId
+        ) {
             toastr.info(notificationMsg, "From " + event.senderName);
         }
     });
@@ -267,7 +272,7 @@ function loadOldMessages() {
 
     userId = $("#uid").val();
 
-    // Make an AJAX request to fetch old messages
+    // Make an AJAX request to fetch old messages of users chat
     $.ajax({
         url: "/get-old-messages/" + userId + "/" + offset + "/" + limit,
         method: "GET",
@@ -288,7 +293,7 @@ function loadOldMessages() {
                         msgType = "both";
                         msg = [chat.message, chat.media];
                     }
-                    if (chat.sender.id != userId) {
+                    if (chat.sender.id == loginUserId) {
                         appendMessage(
                             chat.sender.name,
                             PERSON_IMG,
@@ -462,14 +467,14 @@ function formatDate(datetimeString) {
 
 // -----------------------------------change user status online/offline------------------------------//
 
-addEventListener("beforeunload", function (event) {
-    updateStatus("offline");
-    // event.returnValue = 'You have unsaved changes.';
-});
 // window.onbeforeunload = function(e) {
 //     updateStatus('offline')
 // };
 
+addEventListener("beforeunload", function (event) {
+    updateStatus("offline");
+    // event.returnValue = 'You have unsaved changes.';
+});
 window.addEventListener("load", function () {
     updateStatus("online");
 });
@@ -489,11 +494,15 @@ function updateStatus(state) {
 }
 
 window.Echo.channel("userStatusChannel").listen("UserStatus", (event) => {
+    var onlineUsersValue = parseInt($("#onlineUsers").text(), 10);
     if (event.status == "online") {
+        onlineUsersValue += 1;
         $("#user_" + event.userId).css("color", "green");
     } else {
+        onlineUsersValue -= 1;
         $("#user_" + event.userId).css("color", "grey");
     }
+    $("#onlineUsers").text(onlineUsersValue);
 });
 
 // -----------------------------------change user status online/offline------------------------------//
@@ -529,7 +538,7 @@ window.Echo.channel("unreadMessagesChannel").listen(
 //==================================== Broadcast Channel Code =================================//
 
 $("#broadcast").click(function () {
-    var uidd = $("#uid").val();
+    userId = 0;
     $.ajax({
         type: "GET",
         url: "/broadcast",
@@ -673,3 +682,60 @@ $("#sendBtn").on("click", function (e) {
         });
     }
 });
+
+//====================================== Group feature ========================================//
+
+$('#addMembersDiv').on('click', '.addMember', function() {
+    // Retrieve user information from data attributes
+    var userId = $(this).data("user-id");
+    var userName = $(this).data("user-name");
+
+    // Use the retrieved information as needed
+    console.log("User ID: " + userId);
+    console.log("User Name: " + userName);
+
+    // Remove the clicked row from the DOM
+    $(this).closest(".row").remove();
+
+    var groupMemberDiv =
+        `<div class="row pe-2 my-3">
+                        <div class="col-2"><i class="fa-solid fa-user fa-xl text-warning"></i></div>
+                        <div class="col-8">` +
+        userName +
+        `</div>
+                        <div class="col-2"><i class="fa-solid fa-square-xmark text-danger fa-xl removeMember"
+                        data-user-id="`+userId+`" data-user-name = "`+userName+`"    style="cursor: pointer"></i></div>
+                                <input type="hidden" name="groupMembers[]" value="` +
+        userId +
+        `">
+                        </div>`;
+    $("#groupMembersDiv").append(groupMemberDiv);
+});
+
+
+$('#groupMembersDiv').on('click', '.removeMember', function() {
+    // Retrieve user information from the current row
+    var userId = $(this).data("user-id");
+    var userName = $(this).data("user-name");
+
+    // Use the retrieved information as needed
+    console.log("User ID: " + userId);
+    console.log("User Name: " + userName);
+
+    var addMemberDiv = `<div class="row pe-2 my-3">
+                        <div class="col-2 "><i class="fa-solid fa-user fa-xl text-secondary"></i></div>
+                        <div class="col-8">`+userName+`</div>
+                        <div class="col-2"><i class="fa-solid fa-square-plus fa-xl text-success addMember"
+                                data-user-id="`+userId+`" data-user-name = "`+userName+`" style="cursor: pointer"></i></div>
+                    </div>`;
+
+    // Remove the clicked row from the DOM
+    $(this).closest(".row").remove();
+    $("#addMembersDiv").append(addMemberDiv);
+});
+
+
+//------------open chat of a group-----------------//
+
+
+

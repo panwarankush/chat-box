@@ -33,6 +33,10 @@ Route::group(['middleware'=> 'auth'], function () {
     Route::get('broadcast', [ChatController::class,'loadBroadcastChats'])->name('broadcast');
     Route::post('broadcast', [ChatController::class,'sendMsgToChannel'])->name('broadcast');
 
+
+    Route::post('createGroup', [ChatController::class,'createGroup'])->name('createGroup');
+
+
 });
 
 require __DIR__ . '/auth.php';

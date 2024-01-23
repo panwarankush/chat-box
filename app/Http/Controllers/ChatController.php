@@ -9,6 +9,7 @@ use App\Events\UserStatus;
 use Carbon\Traits\Timestamp;
 use Illuminate\Http\Request;
 use App\Models\Chat;
+use App\Models\Group;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 
@@ -28,9 +29,14 @@ class ChatController extends Controller
             },
         ])->where('id', '!=', Auth::user()->id)->get(['id', 'name', 'status']);
 
+        $onlineUsers = User::where('status', 'online')->count();
         // toastr()->addSuccess('Your account has been restored.');
 
-        return view("home", compact("users"));
+        $userGroups = Group::whereHas('users', function ($query) use ($userId) {
+            $query->where('users.id', $userId);
+        })->get();
+
+        return view("home", compact("users", "onlineUsers", "userGroups"));
     }
 
     public function getChat(Request $request)
@@ -58,17 +64,28 @@ class ChatController extends Controller
 
     public function getOldMessages($userId, $offset, $limit)
     {
-        $loginUser = Auth::user()->id;
-        $chats = Chat::with('sender:id,name')->with('receiver:id,name')->where(function ($query) use ($userId, $loginUser) {
-            $query->where("sender", $loginUser)->where('receiver', $userId);
-        })->orWhere(function ($query) use ($userId, $loginUser) {
-            $query->where("sender", $userId)->where('receiver', $loginUser);
-        })
-            ->orderBy('created_at', 'desc')
-            ->offset($offset)
-            ->limit($limit)
-
-            ->get();
+        if ($userId == 0) {
+            //---------------data for channel chats--------------------//
+            $chats = Chat::with('sender:id,name')->where(function ($query) {
+                $query->where('receiver', 0);
+            })
+                ->orderBy('created_at', 'desc')
+                ->offset($offset)
+                ->limit($limit)
+                ->get();
+        } else {
+            //---------------data for users one to one chat----------------//
+            $loginUser = Auth::user()->id;
+            $chats = Chat::with('sender:id,name')->with('receiver:id,name')->where(function ($query) use ($userId, $loginUser) {
+                $query->where("sender", $loginUser)->where('receiver', $userId);
+            })->orWhere(function ($query) use ($userId, $loginUser) {
+                $query->where("sender", $userId)->where('receiver', $loginUser);
+            })
+                ->orderBy('created_at', 'desc')
+                ->offset($offset)
+                ->limit($limit)
+                ->get();
+        }
 
         return response()->json(['chats' => $chats]);
     }
@@ -202,11 +219,11 @@ class ChatController extends Controller
         $newMsg->receipt = $messageStatus;
         $newMsg->save();
 
-        $msgCount = Chat::where('receiver', $recepeint)->where('receipt', '!=', 'read')->count();
+        // $msgCount = Chat::where('receiver', $recepeint)->where('receipt', '!=', 'read')->count();
 
-        if ($msgCount > 0) {
-            event(new UnreadMessagesEvent($loginUser, $recepeint, $msgCount));
-        }
+        // if ($msgCount > 0) {
+        //     event(new UnreadMessagesEvent($loginUser, $recepeint, $msgCount));
+        // }
 
         $chats =  Chat::with('sender:id,name')->with('receiver:id,name')->where(function ($query) use ($recepeint, $loginUser) {
             $query->where('receiver', $recepeint);
@@ -216,5 +233,32 @@ class ChatController extends Controller
             ->get();
 
         return response()->json(['chats' => $chats]);
+    }
+
+
+
+    //---------------------------------- Group Feature -----------------------------------//
+
+    public function createGroup(Request $request)
+    {
+
+        $validation = $request->validate([
+            'groupName' => 'required | max:20',
+            'groupMembers' => 'required | array'
+        ]);
+
+        $newGroup = new Group;
+        $newGroup->name = $request->groupName;
+        $newGroup->admin_id = Auth::user()->id;
+        $newGroup->image = 'img';
+        $newGroup->description = 'description';
+        $newGroup->save();
+
+        // Attach users to the group from the 'groupMembers' array
+        if ($request->has('groupMembers')) {
+            $newGroup->users()->attach($request->groupMembers);
+        }
+
+        return redirect()->back();
     }
 }

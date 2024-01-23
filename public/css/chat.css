@@ -28,7 +28,6 @@
   }
 
   .msger {
-    display: flex;
     flex-flow: column wrap;
     justify-content: space-between;
     width: 100%;
@@ -42,8 +41,6 @@
   }
 
   .msger-header {
-    display: flex;
-    justify-content: space-between;
     padding: 10px;
     border-bottom: var(--border);
     background: #eee;

@@ -6,6 +6,7 @@ use App\Events\MessageStatus;
 use App\Events\NewChatMessage;
 use App\Events\UnreadMessagesEvent;
 use App\Events\UserStatus;
+use App\Models\GroupChat;
 use Carbon\Traits\Timestamp;
 use Illuminate\Http\Request;
 use App\Models\Chat;
@@ -260,5 +261,61 @@ class ChatController extends Controller
         }
 
         return redirect()->back();
+    }
+
+    public function getGroupChat(Request $request){
+        $loginUser = Auth::user()->id;
+        $groupId = $request->groupId;
+
+        $chats =  GroupChat::with('sender:id,name')->with('group:id,name')->where(function ($query) use ($groupId) {
+            $query->where('group_id', $groupId);
+        })
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get();
+
+        return response()->json(['chats' => $chats]);
+    }
+
+    public function sendGroupChat(Request $request)
+    {
+        $request->validate([
+            "groupId" => "required",
+        ]);
+
+        $loginUser = Auth::user()->id;
+        $groupId = $request->groupId;
+
+        $file = $request->file('mediaInput');
+
+        if ($request->message && $file) {
+            $filename = time() . '_chat.' . $file->extension();
+            $file->move(public_path('uploads'), $filename);
+            event(new NewChatMessage([$request->message, $filename], $loginUser, $groupId, Auth::user()->name, now(), 'both'));
+        } elseif ($file) {
+            $filename = time() . '_chat.' . $file->extension();
+            $file->move(public_path('uploads'), $filename);
+            event(new NewChatMessage($filename, $loginUser, $groupId, Auth::user()->name, now(), 'media'));
+        } elseif ($request->message) {
+            $filename = null;
+            event(new NewChatMessage($request->message, $loginUser, $groupId, Auth::user()->name, now(), 'text'));
+        }
+
+        $newMsg = new GroupChat;
+        $newMsg->sender = $loginUser;
+        $newMsg->group_id = $groupId;
+        $newMsg->message = $request->message;
+        $newMsg->media = $filename;
+        $newMsg->receipt = 'read';
+        $newMsg->save();
+
+        $chats =  GroupChat::with('sender:id,name')->with('group:id,name')->where(function ($query) use ($groupId) {
+            $query->where('group_id', $groupId);
+        })
+            ->latest()
+            ->limit(1)
+            ->get();
+
+        return response()->json(['chats' => $chats]);
     }
 }

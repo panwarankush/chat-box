@@ -34,11 +34,18 @@ class User extends Authenticatable
         return $this->hasMany(Chat::class, 'receiver','id');
     }
 
+    public function groupChats()
+    {
+        return $this->hasMany(GroupChat::class, 'sender','id');
+    }
+
 
     public function groups()
     {
         return $this->belongsToMany(Group::class);
     }
+
+
 
 
     /**

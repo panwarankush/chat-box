@@ -124,9 +124,9 @@
                 @endif
 
                 @foreach ($userGroups as $group)
-                    <div class="row py-3 text-secondary border-bottom" style="cursor: pointer; --bs-gutter-x: 0rem;"
-                        id="group">
-                        <div class="col-lg-2 text-info" id="create_group"><i
+                    <div class="row py-3 text-secondary border-bottom group-chats" style="cursor: pointer; --bs-gutter-x: 0rem;"
+                        data-group-id="{{ $group->id }}">
+                        <div class="col-lg-2 text-info" id=""><i
                                 class="fa-solid fa-user-group fa-lg ps-2"></i>
                         </div>
                         <div class="col-lg-7">
@@ -175,6 +175,8 @@
 
                     <div class="text-danger text-center my-4 h3" id="noMsgFound"></div>
                     <input type="hidden" id="uid" value="">
+                    <input type="hidden" id="chatType" value="">
+
                     <form class="msger-inputarea" id="mediaForm" enctype="multipart/form-data">
                         <input type="file" accept="image/*, video/*, audio/*, application/pdf" id="mediaInput"
                             style="display: none;">

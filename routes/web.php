@@ -33,8 +33,10 @@ Route::group(['middleware'=> 'auth'], function () {
     Route::get('broadcast', [ChatController::class,'loadBroadcastChats'])->name('broadcast');
     Route::post('broadcast', [ChatController::class,'sendMsgToChannel'])->name('broadcast');
 
-
     Route::post('createGroup', [ChatController::class,'createGroup'])->name('createGroup');
+    Route::post('groupChats', [ChatController::class,'getGroupChat'])->name('groupChats');
+    Route::post('/sendChat', [ChatController::class, 'sendGroupChat'])->name('sendChat');
+
 
 
 });

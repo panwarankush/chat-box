@@ -13,4 +13,9 @@ class Group extends Model
     {
         return $this->belongsToMany(User::class);
     }
+
+    public function groupReceivedChats()
+    {
+        return $this->hasMany(GroupChat::class, 'group_id','id');
+    }
 }

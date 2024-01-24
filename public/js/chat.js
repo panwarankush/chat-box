@@ -5,6 +5,7 @@ var userId;
 var offset = 5; // Initial offset
 var limit = 5; // Number of messages to fetch per request
 var stopLoadMsg = true;
+var chatType;
 
 const BOT_IMG = "https://img.icons8.com/color/48/user.png";
 const PERSON_IMG = "https://img.icons8.com/color/48/guest-male--v1.png";
@@ -51,6 +52,7 @@ $(document).ready(function () {
     // ----------------------------------ajax request to open chat of a particular user ----------------------------------------//
     $(".user-row").click(function () {
         userId = $(this).data("user-id");
+        $('#chatType').val('personal');
         $('span[data-uid="' + userId + '"]').text("");
         // console.log(userId);
         // return;
@@ -71,6 +73,7 @@ $(document).ready(function () {
                 $("#chatBox").show();
                 $("#noChat").hide();
                 $(".user-row").css("background-color", "white");
+                $(".group-chats").css("background-color", "white");
                 $("#broadcast").css("background-color", "white");
                 $('.user-row[data-user-id="' + userId + '"]').css(
                     "background-color",
@@ -134,6 +137,7 @@ $(document).ready(function () {
     window.Echo.channel("chat").listen("NewChatMessage", (event) => {
         // console.log(userId);
         $("#noMsgFound").hide();
+        var openGroup = $('#uid').val();
         var notificationMsg;
         if (event.msgType == "text") {
             notificationMsg = event.message;
@@ -144,7 +148,8 @@ $(document).ready(function () {
         }
         if (
             (event.receiver == loginUserId && event.sender == userId) ||
-            (event.receiver == 0 && userId == 0 && event.sender != loginUserId)
+            (event.receiver == 0 && userId == 0 && event.sender != loginUserId) ||
+            (event.sender != loginUserId && event.receiver == openGroup)
         ) {
             appendMessage(
                 event.senderName,
@@ -160,7 +165,7 @@ $(document).ready(function () {
         }
         if (
             (event.receiver == loginUserId || event.receiver == 0) &&
-            event.sender != loginUserId
+            event.sender != loginUserId 
         ) {
             toastr.info(notificationMsg, "From " + event.senderName);
         }
@@ -172,8 +177,9 @@ $(document).ready(function () {
         var message = $("#message").val();
         var receiver = $("#uid").val();
         var fileInput = $("#mediaInput")[0].files[0];
+        chatType = $('#chatType').val();
 
-        if ((fileInput || message !== "") && receiver !== "" && receiver != 0) {
+        if ((fileInput || message !== "") && receiver !== "" && chatType == 'personal') {
             $("#noMsgFound").hide();
             $("#mediaPreview").show();
             $("#meidaSelected").hide();
@@ -538,6 +544,7 @@ window.Echo.channel("unreadMessagesChannel").listen(
 //==================================== Broadcast Channel Code =================================//
 
 $("#broadcast").click(function () {
+    $('#chatType').val('channel');
     userId = 0;
     $.ajax({
         type: "GET",
@@ -553,6 +560,7 @@ $("#broadcast").click(function () {
             $("#noChat").hide();
             $("#uid").val(0);
             $(".user-row").css("background-color", "white");
+            $(".group-chats").css("background-color", "white");
             $("#broadcast").css("background-color", "#579ffb5c");
 
             if (response.chats && response.chats.length > 0) {
@@ -609,7 +617,7 @@ $("#broadcast").click(function () {
     });
 });
 
-//----------------------------------ajax request to send message in a channel ----------------------------------------//
+//----------ajax request to send message in a channel ------------------//
 $("#sendBtn").on("click", function (e) {
     e.preventDefault();
     var message = $("#message").val();
@@ -735,7 +743,166 @@ $('#groupMembersDiv').on('click', '.removeMember', function() {
 });
 
 
-//------------open chat of a group-----------------//
+//----------------- open chat of a group ------------------//
+
+$(".group-chats").click(function () {
+    groupId = $(this).data("group-id");
+    $('#chatType').val('group');
+    userId =
+
+    $.ajax({
+        type: "POST",
+        url: "/groupChats",
+        data: {
+            groupId: groupId,
+        },
+        headers: {
+            "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+        },
+        success: function (response) {
+            offset = 5;
+            stopLoadMsg = true;
+            $("#msger-chat").empty();
+            $("#uid").val(groupId);
+            $("#chatBox").show();
+            $("#noChat").hide();
+            $(".user-row").css("background-color", "white");
+            $("#broadcast").css("background-color", "white");
+            $(".group-chats").css("background-color", "white");
+            $('.group-chats[data-group-id="' + groupId + '"]').css(
+                "background-color",
+                "#579ffb5c"
+            );
+
+            if (response.chats && response.chats.length > 0) {
+                response.chats.reverse();
+                $("#noMsgFound").hide();
+
+                $.each(response.chats, function (index, chat) {
+                    var msgType;
+                    var msg;
+                    if (chat.message == null) {
+                        msgType = "media";
+                        msg = chat.media;
+                    } else if (chat.media == null) {
+                        msgType = "text";
+                        msg = chat.message;
+                    } else {
+                        msgType = "both";
+                        msg = [chat.message, chat.media];
+                    }
+                    if (chat.sender.id == loginUserId) {
+                        appendMessage(
+                            chat.sender.name,
+                            PERSON_IMG,
+                            "right",
+                            msg,
+                            chat.created_at,
+                            chat.receipt,
+                            "beforeend",
+                            msgType
+                        );
+                    } else {
+                        appendMessage(
+                            chat.sender.name,
+                            BOT_IMG,
+                            "left",
+                            msg,
+                            chat.created_at,
+                            chat.receipt,
+                            "beforeend",
+                            msgType
+                        );
+                    }
+                });
+                msgerChat.scrollTop = msgerChat.scrollHeight;
+            } else {
+                $("#noMsgFound").show();
+                $("#noMsgFound").text("no previous chats found!!");
+            }
+        },
+        error: function (err) {
+            alert(err.statusText);
+        },
+    });
+});
+
+//----------ajax request to send a message in group-------//
+$("#sendBtn").on("click", function (e) {
+    e.preventDefault();
+    var message = $("#message").val();
+    var receiverGroup = $("#uid").val();
+    var fileInput = $("#mediaInput")[0].files[0];
+    chatType = $('#chatType').val();
+
+    if ((fileInput || message !== "") && receiverGroup !== "" && chatType == 'group') {
+        $("#noMsgFound").hide();
+        $("#mediaPreview").show();
+        $("#meidaSelected").hide();
+        $("#mediaDiv").hide();
+
+        const formData = new FormData();
+        formData.append("groupId", receiverGroup);
+        formData.append("message", message);
+        formData.append("mediaInput", fileInput);
+
+        $.ajax({
+            type: "POST",
+            url: "/sendChat",
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {
+                "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+            },
+            success: function (response) {
+                $("#uid").val(receiverGroup);
+                $("#mediaForm")[0].reset();
+                $.each(response.chats, function (index, chat) {
+                    if (chat.message == null) {
+                        appendMessage(
+                            chat.sender.name,
+                            PERSON_IMG,
+                            "right",
+                            chat.media,
+                            chat.created_at,
+                            chat.receipt,
+                            "beforeend",
+                            "media"
+                        );
+                    } else if (chat.media == null) {
+                        appendMessage(
+                            chat.sender.name,
+                            PERSON_IMG,
+                            "right",
+                            chat.message,
+                            chat.created_at,
+                            chat.receipt,
+                            "beforeend",
+                            "text"
+                        );
+                    } else {
+                        appendMessage(
+                            chat.sender.name,
+                            PERSON_IMG,
+                            "right",
+                            [chat.message, chat.media],
+                            chat.created_at,
+                            chat.receipt,
+                            "beforeend",
+                            "both"
+                        );
+                    }
+                    msgerChat.scrollTop = msgerChat.scrollHeight;
+                });
+            },
+            error: function (err) {
+                alert(err.statusText);
+            },
+        });
+    }
+});
+
 
 
 

@@ -165,7 +165,7 @@ $(document).ready(function () {
         }
         if (
             (event.receiver == loginUserId || event.receiver == 0) &&
-            event.sender != loginUserId 
+            event.sender != loginUserId
         ) {
             toastr.info(notificationMsg, "From " + event.senderName);
         }
@@ -256,17 +256,25 @@ var currentScrollPosition = 0;
 
 var chatElement = document.getElementById("msger-chat");
 chatElement.addEventListener("scroll", function (e) {
+    chatType = $('#chatType').val();
     var currentY = chatElement.scrollTop;
     if (currentY < previousY && currentY == 0) {
         // console.log('load more!!!!');
         currentScrollPosition = chatElement.scrollHeight - currentY;
-        if (stopLoadMsg) {
-            loadOldMessages();
+        if (stopLoadMsg)
+        {
+            console.log(chatType);
+            if(chatType != 'group'){
+                loadOldMessages();
+            }else if(chatType){
+                loadOldGroupChats();
+            }
         }
     }
     previousY = currentY;
 });
 
+//Load old chats of users and channel
 function loadOldMessages() {
     var isLoading = false;
     $("#loadingMsg").show();
@@ -275,12 +283,84 @@ function loadOldMessages() {
         return;
     }
     isLoading = true;
-
     userId = $("#uid").val();
 
-    // Make an AJAX request to fetch old messages of users chat
     $.ajax({
         url: "/get-old-messages/" + userId + "/" + offset + "/" + limit,
+        method: "GET",
+        success: function (response) {
+            if (response.chats && response.chats.length > 0) {
+                // response.chats.reverse();
+                // $('#noMsgFound').hide();
+                $.each(response.chats, function (index, chat) {
+                    var msgType;
+                    var msg;
+                    if (chat.message == null) {
+                        msgType = "media";
+                        msg = chat.media;
+                    } else if (chat.media == null) {
+                        msgType = "text";
+                        msg = chat.message;
+                    } else {
+                        msgType = "both";
+                        msg = [chat.message, chat.media];
+                    }
+                    if (chat.sender.id == loginUserId) {
+                        appendMessage(
+                            chat.sender.name,
+                            PERSON_IMG,
+                            "right",
+                            msg,
+                            chat.created_at,
+                            chat.receipt,
+                            "afterbegin",
+                            msgType
+                        );
+                    } else {
+                        appendMessage(
+                            chat.sender.name,
+                            BOT_IMG,
+                            "left",
+                            msg,
+                            chat.created_at,
+                            chat.receipt,
+                            "afterbegin",
+                            msgType
+                        );
+                    }
+                });
+                offset += limit; // Increment offset for the next request
+                msgerChat.scrollTop =
+                    msgerChat.scrollHeight - currentScrollPosition;
+            } else {
+                // $('#noMsgFound').show();
+                // $('#noMsgFound').text('no previous chats found!!')
+                stopLoadMsg = false;
+                msgerChat.insertAdjacentHTML(
+                    "afterbegin",
+                    '<h5 class="text-center text-danger py-4">No More Old Messages Found !!</h5>'
+                );
+            }
+        },
+        complete: function () {
+            isLoading = false;
+            $("#loadingMsg").hide();
+        },
+    });
+}
+
+function loadOldGroupChats(){
+    var isLoading = false;
+    $("#loadingMsg").show();
+
+    if (isLoading) {
+        return;
+    }
+    isLoading = true;
+    groupId = $("#uid").val();
+
+    $.ajax({
+        url: "/get-old-groupChats/" + groupId + "/" + offset + "/" + limit,
         method: "GET",
         success: function (response) {
             if (response.chats && response.chats.length > 0) {

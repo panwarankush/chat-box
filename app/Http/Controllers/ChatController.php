@@ -263,7 +263,8 @@ class ChatController extends Controller
         return redirect()->back();
     }
 
-    public function getGroupChat(Request $request){
+    public function getGroupChat(Request $request)
+    {
         $loginUser = Auth::user()->id;
         $groupId = $request->groupId;
 
@@ -315,6 +316,21 @@ class ChatController extends Controller
             ->latest()
             ->limit(1)
             ->get();
+
+        return response()->json(['chats' => $chats]);
+    }
+    public function getOldGroupChats($groupId, $offset, $limit)
+    {
+
+        $chats =  GroupChat::with('sender:id,name')->with('group:id,name')->where(function ($query) use ($groupId) {
+            $query->where('group_id', $groupId);
+        })
+            ->orderBy('created_at', 'desc')
+            ->offset($offset)
+            ->limit($limit)
+            ->get();
+
+
 
         return response()->json(['chats' => $chats]);
     }

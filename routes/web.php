@@ -22,7 +22,9 @@ Route::get('/', function () {
 });
 
 
-Route::group(['middleware'=> 'auth'], function () {
+Route::group(['middleware'=> 'auth'], function ()
+{
+    // for personal chats
     Route::get('/home', [ChatController::class, 'index'])->name('home');
     Route::get('/dashboard', [ChatController::class, 'index'])->name('dashboard');
     Route::post('/dashboard', [ChatController::class, 'store'])->name('dashboard');
@@ -30,12 +32,16 @@ Route::group(['middleware'=> 'auth'], function () {
     Route::post('/update-status', [ChatController::class, 'updateStatus'])->name('update-status');
     Route::get('/get-old-messages/{userId}/{offset}/{limit}', [ChatController::class, 'getOldMessages']);
 
+    // for channel chats
     Route::get('broadcast', [ChatController::class,'loadBroadcastChats'])->name('broadcast');
     Route::post('broadcast', [ChatController::class,'sendMsgToChannel'])->name('broadcast');
 
+
+    // for group chats
     Route::post('createGroup', [ChatController::class,'createGroup'])->name('createGroup');
     Route::post('groupChats', [ChatController::class,'getGroupChat'])->name('groupChats');
     Route::post('/sendChat', [ChatController::class, 'sendGroupChat'])->name('sendChat');
+    Route::get('/get-old-groupChats/{userId}/{offset}/{limit}', [ChatController::class, 'getOldGroupChats']);
 
 
 

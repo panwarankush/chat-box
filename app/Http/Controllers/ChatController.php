@@ -268,6 +268,9 @@ class ChatController extends Controller
         $loginUser = Auth::user()->id;
         $groupId = $request->groupId;
 
+        $chckGroupAdmin = Group::where('id', $groupId)->where('admin_id', $loginUser)->exists();
+        ($chckGroupAdmin) ? $isGroupAdmin = true : $isGroupAdmin = false;
+
         $chats =  GroupChat::with('sender:id,name')->with('group:id,name')->where(function ($query) use ($groupId) {
             $query->where('group_id', $groupId);
         })
@@ -275,7 +278,7 @@ class ChatController extends Controller
             ->limit(5)
             ->get();
 
-        return response()->json(['chats' => $chats]);
+        return response()->json(['chats' => $chats, 'isGroupAdmin' => $isGroupAdmin]);
     }
 
     public function sendGroupChat(Request $request)
@@ -333,5 +336,54 @@ class ChatController extends Controller
 
 
         return response()->json(['chats' => $chats]);
+    }
+    public function editGroup($groupId)
+    {
+
+        $groupWithUsers = Group::select('id', 'name')->with(['users:id,name'])->find($groupId);
+
+        $usersNotInGroup = User::select('id', 'name')->whereDoesntHave('groups', function ($query) use ($groupId) {
+            $query->where('group_id', $groupId);
+        })->get();
+
+        return response()->json(['groupWithUsers' => $groupWithUsers, 'usersNotInGroup' => $usersNotInGroup]);
+    }
+
+    public function updateGroup(Request $request)
+    {
+        $validation = $request->validate([
+            'groupId' => 'required',
+            'groupName' => 'required | max:20',
+            'groupMembers' => 'required | array'
+        ]);
+
+        $group = Group::find($request->groupId);
+
+        if ($group) {
+            $group->update(['name' => $request->groupName]);
+        }
+
+        $group->users()->sync($request->groupMembers);
+
+        return redirect()->back();
+    }
+
+    public function deleteGroup($groupId)
+    {
+        $group = Group::find($groupId);
+        //delete relationship
+        $group->users()->detach();
+        //delete all chats
+        GroupChat::where('group_id', $groupId)->delete();
+        //delete group
+        $group->delete();
+        return response()->json(['message' => 'Group Deleted Successfully']);
+    }
+
+    public function exitGroup($groupId)
+    {
+        $group = Group::find($groupId);
+        $group->users()->detach(Auth::user()->id);
+        return response()->json(['message' => 'You Successfully Exit The Group.']);
     }
 }

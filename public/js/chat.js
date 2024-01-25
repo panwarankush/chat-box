@@ -52,7 +52,12 @@ $(document).ready(function () {
     // ----------------------------------ajax request to open chat of a particular user ----------------------------------------//
     $(".user-row").click(function () {
         userId = $(this).data("user-id");
-        $('#chatType').val('personal');
+        $("#openedChat").show();
+        $("#settingSpan").hide();
+        $("#groupExitBtn").hide();
+        var groupName = $(this).find(".col-lg-7").text();
+        $("#openedChat span:first").text(groupName);
+        $("#chatType").val("personal");
         $('span[data-uid="' + userId + '"]').text("");
         // console.log(userId);
         // return;
@@ -137,7 +142,7 @@ $(document).ready(function () {
     window.Echo.channel("chat").listen("NewChatMessage", (event) => {
         // console.log(userId);
         $("#noMsgFound").hide();
-        var openGroup = $('#uid').val();
+        var openGroup = $("#uid").val();
         var notificationMsg;
         if (event.msgType == "text") {
             notificationMsg = event.message;
@@ -148,7 +153,9 @@ $(document).ready(function () {
         }
         if (
             (event.receiver == loginUserId && event.sender == userId) ||
-            (event.receiver == 0 && userId == 0 && event.sender != loginUserId) ||
+            (event.receiver == 0 &&
+                userId == 0 &&
+                event.sender != loginUserId) ||
             (event.sender != loginUserId && event.receiver == openGroup)
         ) {
             appendMessage(
@@ -177,9 +184,13 @@ $(document).ready(function () {
         var message = $("#message").val();
         var receiver = $("#uid").val();
         var fileInput = $("#mediaInput")[0].files[0];
-        chatType = $('#chatType').val();
+        chatType = $("#chatType").val();
 
-        if ((fileInput || message !== "") && receiver !== "" && chatType == 'personal') {
+        if (
+            (fileInput || message !== "") &&
+            receiver !== "" &&
+            chatType == "personal"
+        ) {
             $("#noMsgFound").hide();
             $("#mediaPreview").show();
             $("#meidaSelected").hide();
@@ -256,17 +267,15 @@ var currentScrollPosition = 0;
 
 var chatElement = document.getElementById("msger-chat");
 chatElement.addEventListener("scroll", function (e) {
-    chatType = $('#chatType').val();
+    chatType = $("#chatType").val();
     var currentY = chatElement.scrollTop;
     if (currentY < previousY && currentY == 0) {
         // console.log('load more!!!!');
         currentScrollPosition = chatElement.scrollHeight - currentY;
-        if (stopLoadMsg)
-        {
-            console.log(chatType);
-            if(chatType != 'group'){
+        if (stopLoadMsg) {
+            if (chatType != "group") {
                 loadOldMessages();
-            }else if(chatType){
+            } else if (chatType) {
                 loadOldGroupChats();
             }
         }
@@ -349,7 +358,7 @@ function loadOldMessages() {
     });
 }
 
-function loadOldGroupChats(){
+function loadOldGroupChats() {
     var isLoading = false;
     $("#loadingMsg").show();
 
@@ -624,7 +633,12 @@ window.Echo.channel("unreadMessagesChannel").listen(
 //==================================== Broadcast Channel Code =================================//
 
 $("#broadcast").click(function () {
-    $('#chatType').val('channel');
+    $("#chatType").val("channel");
+    $("#openedChat").show();
+    $("#settingSpan").hide();
+    $("#groupExitBtn").hide();
+    var groupName = $(this).find(".col-lg-7").text();
+    $("#openedChat span:first").text(groupName);
     userId = 0;
     $.ajax({
         type: "GET",
@@ -773,14 +787,10 @@ $("#sendBtn").on("click", function (e) {
 
 //====================================== Group feature ========================================//
 
-$('#addMembersDiv').on('click', '.addMember', function() {
+$("#addMembersDiv").on("click", ".addMember", function () {
     // Retrieve user information from data attributes
     var userId = $(this).data("user-id");
     var userName = $(this).data("user-name");
-
-    // Use the retrieved information as needed
-    console.log("User ID: " + userId);
-    console.log("User Name: " + userName);
 
     // Remove the clicked row from the DOM
     $(this).closest(".row").remove();
@@ -792,7 +802,11 @@ $('#addMembersDiv').on('click', '.addMember', function() {
         userName +
         `</div>
                         <div class="col-2"><i class="fa-solid fa-square-xmark text-danger fa-xl removeMember"
-                        data-user-id="`+userId+`" data-user-name = "`+userName+`"    style="cursor: pointer"></i></div>
+                        data-user-id="` +
+        userId +
+        `" data-user-name = "` +
+        userName +
+        `"    style="cursor: pointer"></i></div>
                                 <input type="hidden" name="groupMembers[]" value="` +
         userId +
         `">
@@ -800,21 +814,23 @@ $('#addMembersDiv').on('click', '.addMember', function() {
     $("#groupMembersDiv").append(groupMemberDiv);
 });
 
-
-$('#groupMembersDiv').on('click', '.removeMember', function() {
+$("#groupMembersDiv").on("click", ".removeMember", function () {
     // Retrieve user information from the current row
     var userId = $(this).data("user-id");
     var userName = $(this).data("user-name");
 
-    // Use the retrieved information as needed
-    console.log("User ID: " + userId);
-    console.log("User Name: " + userName);
-
-    var addMemberDiv = `<div class="row pe-2 my-3">
+    var addMemberDiv =
+        `<div class="row pe-2 my-3">
                         <div class="col-2 "><i class="fa-solid fa-user fa-xl text-secondary"></i></div>
-                        <div class="col-8">`+userName+`</div>
+                        <div class="col-8">` +
+        userName +
+        `</div>
                         <div class="col-2"><i class="fa-solid fa-square-plus fa-xl text-success addMember"
-                                data-user-id="`+userId+`" data-user-name = "`+userName+`" style="cursor: pointer"></i></div>
+                                data-user-id="` +
+        userId +
+        `" data-user-name = "` +
+        userName +
+        `" style="cursor: pointer"></i></div>
                     </div>`;
 
     // Remove the clicked row from the DOM
@@ -822,13 +838,14 @@ $('#groupMembersDiv').on('click', '.removeMember', function() {
     $("#addMembersDiv").append(addMemberDiv);
 });
 
-
 //----------------- open chat of a group ------------------//
 
 $(".group-chats").click(function () {
     groupId = $(this).data("group-id");
-    $('#chatType').val('group');
-    userId =
+    $("#chatType").val("group");
+    $("#openedChat").show();
+    var groupName = $(this).find(".col-lg-7").text();
+    $("#openedChat span:first").text(groupName);
 
     $.ajax({
         type: "POST",
@@ -853,6 +870,13 @@ $(".group-chats").click(function () {
                 "background-color",
                 "#579ffb5c"
             );
+            if (response.isGroupAdmin) {
+                $("#settingSpan").show();
+                $("#groupExitBtn").hide();
+            } else {
+                $("#settingSpan").hide();
+                $("#groupExitBtn").show();
+            }
 
             if (response.chats && response.chats.length > 0) {
                 response.chats.reverse();
@@ -913,9 +937,13 @@ $("#sendBtn").on("click", function (e) {
     var message = $("#message").val();
     var receiverGroup = $("#uid").val();
     var fileInput = $("#mediaInput")[0].files[0];
-    chatType = $('#chatType').val();
+    chatType = $("#chatType").val();
 
-    if ((fileInput || message !== "") && receiverGroup !== "" && chatType == 'group') {
+    if (
+        (fileInput || message !== "") &&
+        receiverGroup !== "" &&
+        chatType == "group"
+    ) {
         $("#noMsgFound").hide();
         $("#mediaPreview").show();
         $("#meidaSelected").hide();
@@ -983,6 +1011,171 @@ $("#sendBtn").on("click", function (e) {
     }
 });
 
+$("#setting-btn").click(function () {
+    groupId = $("#uid").val();
+    chatType = $("#chatType").val();
+    if (chatType == "group") {
+        $.ajax({
+            type: "GET",
+            url: "/updateGroup/" + groupId,
+            headers: {
+                "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+            },
+            success: function (response) {
+                $("#updateGroupModal").modal("show");
+                $("#groupIdDiv").val(response.groupWithUsers.id);
+                $("#updateGroupName").val(response.groupWithUsers.name);
 
+                var updateGroupMembersDiv = $("#updateGroupMembersDiv");
+                var updateGroupaddMembersDiv = $("#updateGroupaddMembersDiv");
 
+                // Clear existing content
+                updateGroupMembersDiv.empty();
+                updateGroupaddMembersDiv.empty();
 
+                updateGroupMembersDiv.prepend(
+                    '<label for="members" class="form-label text-center mb-1">Group Members</label>'
+                );
+
+                updateGroupaddMembersDiv.prepend(
+                    '<label for="members" class="form-label text-center mb-1">Add Members</label>'
+                );
+                // Iterate through users
+                $.each(response.groupWithUsers.users, function (index, user) {
+                    if (user.id != loginUserId) {
+                        // Append user information to the form
+                        updateGroupMembersDiv.append(
+                            `<div class="row pe-2 my-3">
+                            <div class="col-2"><i class="fa-solid fa-user fa-xl text-warning"></i></div>
+                            <div class="col-8">` +
+                                user.name +
+                                `</div>
+                            <div class="col-2"><i class="fa-solid fa-square-xmark text-danger fa-xl removeMember"
+                            data-user-id="` +
+                                user.id +
+                                `" data-user-name = "` +
+                                user.name +
+                                `"    style="cursor: pointer"></i></div>
+                                <input type="hidden" name="groupMembers[]" value="` +
+                                user.id +
+                                `">
+                        </div>`
+                        );
+                    } else {
+                        updateGroupMembersDiv.append(
+                            `<div class="row pe-2 my-3">
+                            <div class="col-2"><i class="fa-solid fa-user fa-xl text-warning"></i></div>
+                            <div class="col-8">You - Admin<input type="hidden" name="groupMembers[]" value="` +
+                                user.id +
+                                `">
+                        </div>`
+                        );
+                    }
+                });
+                $.each(response.usersNotInGroup, function (index, user) {
+                    // Append user information to the form
+                    updateGroupaddMembersDiv.append(
+                        `<div class="row pe-2 my-3">
+                        <div class="col-2 "><i class="fa-solid fa-user fa-xl text-secondary"></i></div>
+                        <div class="col-8">` +
+                            user.name +
+                            `</div>
+                        <div class="col-2"><i class="fa-solid fa-square-plus fa-xl text-success addMember"
+                                data-user-id="` +
+                            user.id +
+                            `" data-user-name = "` +
+                            user.name +
+                            `" style="cursor: pointer"></i></div>
+                    </div>`
+                    );
+                });
+            },
+            error: function (err) {
+                alert(err.statusText);
+            },
+        });
+    }
+});
+
+//---------group update feature-----------//4
+
+$("#updateGroupaddMembersDiv").on("click", ".addMember", function () {
+    // Retrieve user information from data attributes
+    var userId = $(this).data("user-id");
+    var userName = $(this).data("user-name");
+
+    // Remove the clicked row from the DOM
+    $(this).closest(".row").remove();
+
+    var groupMemberDiv =
+        `<div class="row pe-2 my-3">
+                        <div class="col-2"><i class="fa-solid fa-user fa-xl text-warning"></i></div>
+                        <div class="col-8">` +
+        userName +
+        `</div>
+                        <div class="col-2"><i class="fa-solid fa-square-xmark text-danger fa-xl removeMember"
+                        data-user-id="` +
+        userId +
+        `" data-user-name = "` +
+        userName +
+        `"    style="cursor: pointer"></i></div>
+                                <input type="hidden" name="groupMembers[]" value="` +
+        userId +
+        `">
+                        </div>`;
+    $("#updateGroupMembersDiv").append(groupMemberDiv);
+});
+
+$("#updateGroupMembersDiv").on("click", ".removeMember", function () {
+    // Retrieve user information from the current row
+    var userId = $(this).data("user-id");
+    var userName = $(this).data("user-name");
+
+    var addMemberDiv =
+        `<div class="row pe-2 my-3">
+                        <div class="col-2 "><i class="fa-solid fa-user fa-xl text-secondary"></i></div>
+                        <div class="col-8">` +
+        userName +
+        `</div>
+                        <div class="col-2"><i class="fa-solid fa-square-plus fa-xl text-success addMember"
+                                data-user-id="` +
+        userId +
+        `" data-user-name = "` +
+        userName +
+        `" style="cursor: pointer"></i></div>
+                    </div>`;
+
+    // Remove the clicked row from the DOM
+    $(this).closest(".row").remove();
+    $("#updateGroupaddMembersDiv").append(addMemberDiv);
+});
+
+//--------------delete group-------------------//
+$("#deleteGroup").click(function () {
+    groupId = $("#groupIdDiv").val();
+    $.ajax({
+        type: "GET",
+        url: "/deleteGroup/" + groupId,
+        headers: {
+            "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+        },
+        success: function (response) {
+            location.reload(true);
+        },
+    });
+});
+
+//-----------exit from group----------------//
+$("#groupExit").click(function () {
+    groupId = $("#uid").val();
+    $.ajax({
+        type: "GET",
+        url: "/exitGroup/" + groupId,
+        headers: {
+            "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+        },
+        success: function (response) {
+            location.reload(true);
+        },
+    });
+});

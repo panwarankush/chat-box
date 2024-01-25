@@ -45,7 +45,6 @@
                                 <div class="row pe-2 my-3">
                                     <div class="col-2"><i class="fa-solid fa-user fa-xl text-warning"></i></div>
                                     <div class="col-8">You - Admin</div>
-                                    <div class="col-2"></div>
                                     <input type="hidden" name="groupMembers[]" value="{{ Auth::user()->id }}">
                                 </div>
                             </div>
@@ -70,12 +69,52 @@
             </div>
         </div>
     </div>
-
     {{-- --------- create group modal end -------------- --}}
+
+
+    {{-- --------- update group modal start -------------- --}}
+    <div class="modal fade" id="updateGroupModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title text-dark" id="">Update Group</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form action="updateGroup" method="POST">
+                    @csrf
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="group_name" class="form-label">Group Name</label>
+                            <input type="text" name="groupName" class="form-control" id="updateGroupName" value=""
+                                placeholder="Enter Group Name" maxlength="20" required>
+                        </div>
+
+                        <input type="hidden" name="groupId" id="groupIdDiv">
+
+                        <div class="row mt-4" style="height: 50vh">
+                            <div class="col-6 border-end h-100" id="updateGroupMembersDiv" style="overflow-y: auto;">
+                                <label for="members" class="form-label text-center mb-1">Group Members</label>
+                            </div>
+                            <div class="col-6 h-100" id="updateGroupaddMembersDiv" style="overflow-y: auto;">
+                                <label for="members" class="form-label mb-1">New Members</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-danger" id="deleteGroup">Delete Group</button>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {{-- --------- update group modal end -------------- --}}
     <section class="msger">
         <header class="msger-header">
             <div class="row">
-                <div class="col-3">
+                <div class="col-3  border-end border-2">
                     <div class="">
                         <i class="fas fa-comment-alt"></i> Live Chat Box
                         <span class="float-end" data-bs-toggle="modal" data-bs-target="#exampleModal">
@@ -83,11 +122,17 @@
                         </span>
                     </div>
                 </div>
-                <div class="col-6">
-
-                </div>
-                <div class="col-3">
-
+                <div class="col-9 text-center" id="openedChat" style="display: none">
+                    <span class="text-dark fw-bold"></span>
+                    <span class="float-end pe-3" id="settingSpan" style="display:none"><i class="fa-solid fa-gear fa-lg"
+                            id="setting-btn" style="cursor: pointer;"></i>
+                    </span>
+                    <span class="float-end pe-3" id="groupExitBtn" style="display:none">
+                        <i class="fa-solid fa-right-from-bracket fa-lg text-danger" id="groupExit" style="cursor:pointer;"></i>
+                    </span>
+                    {{-- <span class="float-end pe-3" id="voiceCallSpan" style="display:">
+                        <i class="fa-solid fa-phone fa-lg text-secondary" id="voiceCallBtn" style="cursor:pointer;"></i>
+                    </span> --}}
                 </div>
             </div>
         </header>
@@ -124,10 +169,9 @@
                 @endif
 
                 @foreach ($userGroups as $group)
-                    <div class="row py-3 text-secondary border-bottom group-chats" style="cursor: pointer; --bs-gutter-x: 0rem;"
-                        data-group-id="{{ $group->id }}">
-                        <div class="col-lg-2 text-info" id=""><i
-                                class="fa-solid fa-user-group fa-lg ps-2"></i>
+                    <div class="row py-3 text-secondary border-bottom group-chats"
+                        style="cursor: pointer; --bs-gutter-x: 0rem;" data-group-id="{{ $group->id }}">
+                        <div class="col-lg-2 text-info" id=""><i class="fa-solid fa-user-group fa-lg ps-2"></i>
                         </div>
                         <div class="col-lg-7">
                             {{ $group->name }}

@@ -42,6 +42,10 @@ Route::group(['middleware'=> 'auth'], function ()
     Route::post('groupChats', [ChatController::class,'getGroupChat'])->name('groupChats');
     Route::post('/sendChat', [ChatController::class, 'sendGroupChat'])->name('sendChat');
     Route::get('/get-old-groupChats/{userId}/{offset}/{limit}', [ChatController::class, 'getOldGroupChats']);
+    Route::get('updateGroup/{groupId}', [ChatController::class,'editGroup']);
+    Route::post('updateGroup', [ChatController::class,'updateGroup'])->name('updateGroup');
+    Route::get('deleteGroup/{groupId}', [ChatController::class,'deleteGroup']);
+    Route::get('exitGroup/{groupId}', [ChatController::class,'exitGroup']);
 
 
 

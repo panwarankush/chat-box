@@ -53,6 +53,7 @@ $(document).ready(function () {
     $(".user-row").click(function () {
         userId = $(this).data("user-id");
         $("#openedChat").show();
+        $("#voiceCallSpan").show();
         $("#settingSpan").hide();
         $("#groupExitBtn").hide();
         var groupName = $(this).find(".col-lg-7").text();
@@ -636,6 +637,7 @@ $("#broadcast").click(function () {
     $("#chatType").val("channel");
     $("#openedChat").show();
     $("#settingSpan").hide();
+    $("#voiceCallSpan").hide();
     $("#groupExitBtn").hide();
     var groupName = $(this).find(".col-lg-7").text();
     $("#openedChat span:first").text(groupName);
@@ -844,6 +846,7 @@ $(".group-chats").click(function () {
     groupId = $(this).data("group-id");
     $("#chatType").val("group");
     $("#openedChat").show();
+    $("#voiceCallSpan").hide();
     var groupName = $(this).find(".col-lg-7").text();
     $("#openedChat span:first").text(groupName);
 
@@ -1179,3 +1182,144 @@ $("#groupExit").click(function () {
         },
     });
 });
+
+//====================================== Voice Call Feature Code ========================================//
+
+//----voice call connecting request----//
+$("#voiceCallBtn").click(function () {
+    userId = $("#uid").val();
+    $.ajax({
+        type: "POST",
+        url: "/connectVoiceCall",
+        headers: {
+            "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+        },
+        data: {
+            receiverId: userId,
+        },
+        success: function (response) {
+            // console.log(response);
+            // location.reload(true);
+            // Set a value
+            $("#voiceCallModal").modal("show");
+            $("#ringingCallButtons").show();
+            $("#voiceEndedBtn").data("receiver-id", userId);
+            $("#voiceCallerName").text(response.receiverName);
+            if (response.receiverStatus == "offline") {
+                $("#voiceCallStatus")
+                    .text("Call not connected !!")
+                    .css("color", "red");
+            } else {
+                $("#voiceCallStatus").text("Ringing...").css("color", "green");
+            }
+        },
+    });
+});
+
+//----voice call rejected by receiver end----//
+$("#voiceRejectedBtn").click(function () {
+    var retrievedCallerId = $("#voiceRejectedBtn").data("caller-id");
+    $.ajax({
+        type: "POST",
+        url: "/rejectedVoiceCall",
+        headers: {
+            "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+        },
+        data: {
+            callerId: retrievedCallerId,
+        },
+        success: function (response) {
+            $(".allButtonsRow").hide();
+            $("#voiceCallModal").modal("hide");
+        },
+    });
+});
+
+//----voice call ended by caller before connect----//
+$(".voiceEndBtnClass").click(function () {
+    var receiverId = $("#voiceEndedBtn").data("receiver-id");
+    console.log(receiverId);
+    if (receiverId != "") {
+        $.ajax({
+            type: "POST",
+            url: "/endVoiceCall",
+            headers: {
+                "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+            },
+            data: {
+                callerId: receiverId,
+            },
+            success: function (response) {
+                $(".allButtonsRow").hide();
+                $("#voiceCallModal").modal("hide");
+            },
+        });
+    }
+});
+
+//----accept voice call-------//
+$("#voiceAcceptedBtn").click(function () {
+    var callerId = $("#voiceAcceptedBtn").data("caller-id");
+    if (callerId != "") {
+        $.ajax({
+            type: "POST",
+            url: "/acceptVoiceCall",
+            headers: {
+                "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+            },
+            data: {
+                callerId: callerId,
+            },
+            success: function (response) {
+                $(".voiceEndBtnClass").data("receiver-id", callerId);
+                $("#voiceCallStatus")
+                    .text("On call time running")
+                    .css("color", "green");
+                $(".allButtonsRow").hide();
+                $("#onCallButtons").show();
+            },
+        });
+    }
+});
+
+//-----voice call ended request--------//
+
+//------listen voice call event-------//
+window.Echo.private(`voice-call.${loginUserId}`).listen(
+    "VoiceCallEvent",
+    (event) => {
+        console.log(event);
+        //if voice call ringing for this user
+        if (event.status == "ringing") {
+            $("#voiceCallModal").modal("show");
+            $("#incomeCallButtons").show();
+            $("#voiceCallerName").text(event.callerName);
+            $("#voiceCallStatus")
+                .text("Incoming Call...")
+                .css("color", "green");
+            $("#voiceRejectedBtn").data("caller-id", event.callerId);
+            $("#voiceAcceptedBtn").data("caller-id", event.callerId);
+            $(".voiceEndBtnClass").data("receiver-id", event.callerId);
+
+            //if voice call is ended after call complete
+        } else if (event.status == "ended") {
+            $(".allButtonsRow").hide();
+            $("#voiceCallModal").modal("hide");
+
+            //if voice call rejected by receiver
+        } else if (event.status == "rejected") {
+            $("#voiceEndedBtn").data("receiver-id", "");
+            $("#voiceCallStatus")
+                .text("Call rejected by receiver !!")
+                .css("color", "red");
+
+            //if voice call is connected and accepted by receiver
+        } else if (event.status == "accepted") {
+            $("#voiceCallStatus")
+                .text("On call time running")
+                .css("color", "green");
+            $(".allButtonsRow").hide();
+            $("#onCallButtons").show();
+        }
+    }
+);

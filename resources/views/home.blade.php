@@ -111,6 +111,78 @@
     </div>
 
     {{-- --------- update group modal end -------------- --}}
+
+
+    {{-- --------- Voice Call modal start -------------- --}}
+    <div class="modal fade" id="voiceCallModal" tabindex="-1" role="dialog" aria-labelledby="voiceCall"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-info-subtle">
+                <div class="modal-header">
+                    <h5 class="modal-title text-dark" id="">Voice Call</h5>
+                </div>
+                <div class="modal-body">
+                    <div class="row mt-5">
+                        <div class="col-12 text-center">
+                            <div class="h1" id="voiceCallerName">
+                                {{-- caller or receiver name --}}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mb-5 mt-2">
+                        <div class="col-12 text-center">
+                            <div class="h6" id="voiceCallStatus">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-2 pt-5 allButtonsRow" id="ringingCallButtons" style="display: none">
+                        <div class="col-12 text-center">
+                            <button type="button" class="btn btn-danger rounded-circle btn-lg p-3 voiceEndBtnClass" id="voiceEndedBtn" data-receiver-id="" data-bs-dismiss="modal" aria-label="Close">
+                                <i class="fa-solid fa-phone fa-xl p-1" style="transform: rotate(136deg)"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="row mb-2 pt-5 allButtonsRow" id="incomeCallButtons" style="display: none">
+                        <div class="col-6 text-center">
+                            <button type="button" class="btn btn-success rounded-circle btn-lg p-3" id="voiceAcceptedBtn"  data-caller-id="">
+                                <i class="fa-solid fa-phone fa-xl p-1"></i>
+                            </button>
+                        </div>
+                        <div class="col-6 text-center">
+                            <button type="button" class="btn btn-danger rounded-circle btn-lg p-3" id="voiceRejectedBtn" data-caller-id="" data-bs-dismiss="modal" aria-label="Close">
+                                <i class="fa-solid fa-phone fa-xl p-1" style="transform: rotate(136deg)"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="row mb-2 pt-5 allButtonsRow" id="onCallButtons" style="display: none">
+                        <div class="col-5 text-center my-auto">
+                            <button class="btn btn-secondary roundded-circle btn-lg">
+                                <i class="fa-solid fa-microphone-slash"></i>
+                            </button>
+                        </div>
+                        <div class="col-2 text-center">
+                            <button type="button" class="btn btn-danger rounded-circle btn-lg p-3 voiceEndBtnClass" data-receiver-id="" data-bs-dismiss="modal" aria-label="Close">
+                                <i class="fa-solid fa-phone fa-xl p-1" style="transform: rotate(136deg)"></i>
+                            </button>
+                        </div>
+                        <div class="col-5 text-center my-auto">
+                            <button class="btn btn-secondary roundded-circle btn-lg">
+                                <i class="fa-solid fa-phone-volume"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- --------- Voice Call modal end -------------- --}}
+
+
     <section class="msger">
         <header class="msger-header">
             <div class="row">
@@ -128,11 +200,12 @@
                             id="setting-btn" style="cursor: pointer;"></i>
                     </span>
                     <span class="float-end pe-3" id="groupExitBtn" style="display:none">
-                        <i class="fa-solid fa-right-from-bracket fa-lg text-danger" id="groupExit" style="cursor:pointer;"></i>
+                        <i class="fa-solid fa-right-from-bracket fa-lg text-danger" id="groupExit"
+                            style="cursor:pointer;"></i>
                     </span>
-                    {{-- <span class="float-end pe-3" id="voiceCallSpan" style="display:">
-                        <i class="fa-solid fa-phone fa-lg text-secondary" id="voiceCallBtn" style="cursor:pointer;"></i>
-                    </span> --}}
+                    <span class="float-end pe-3" id="voiceCallSpan" style="display:none">
+                            <i class="fa-solid fa-phone fa-lg text-secondary" id="voiceCallBtn" style="cursor: pointer;"></i>
+                    </span>
                 </div>
             </div>
         </header>

@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\ChatController;
+use App\Http\Controllers\CallController;
 use Illuminate\Support\Facades\Session;
 
 
@@ -46,6 +47,14 @@ Route::group(['middleware'=> 'auth'], function ()
     Route::post('updateGroup', [ChatController::class,'updateGroup'])->name('updateGroup');
     Route::get('deleteGroup/{groupId}', [ChatController::class,'deleteGroup']);
     Route::get('exitGroup/{groupId}', [ChatController::class,'exitGroup']);
+
+
+    //for voice call
+    Route::post('connectVoiceCall', [CallController::class,'connectVoiceCall']);
+    Route::post('rejectedVoiceCall', [CallController::class,'rejectedVoiceCall']);
+    Route::post('endVoiceCall', [CallController::class,'endVoiceCall']);
+    Route::post('acceptVoiceCall', [CallController::class,'acceptVoiceCall']);
+
 
 
 

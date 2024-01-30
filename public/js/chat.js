@@ -1184,6 +1184,30 @@ $("#groupExit").click(function () {
 });
 
 //====================================== Voice Call Feature Code ========================================//
+let timer;
+let seconds = 0;
+let minutes = 0;
+let hours = 0;
+
+function updateTimer() {
+    seconds++;
+    if (seconds === 60) {
+        seconds = 0;
+        minutes++;
+        if (minutes === 60) {
+            minutes = 0;
+            hours++;
+        }
+    }
+
+    const formattedTime =
+        padNumber(hours) + ":" + padNumber(minutes) + ":" + padNumber(seconds);
+    document.getElementById("voiceCallStatus").innerText = formattedTime;
+}
+
+function padNumber(num) {
+    return num.toString().padStart(2, "0");
+}
 
 //----voice call connecting request----//
 $("#voiceCallBtn").click(function () {
@@ -1250,6 +1274,12 @@ $(".voiceEndBtnClass").click(function () {
                 callerId: receiverId,
             },
             success: function (response) {
+                // Clear the timer
+                clearInterval(timer);
+                seconds = 0;
+                minutes = 0;
+                hours = 0;
+
                 $(".allButtonsRow").hide();
                 $("#voiceCallModal").modal("hide");
             },
@@ -1259,6 +1289,11 @@ $(".voiceEndBtnClass").click(function () {
 
 //----accept voice call-------//
 $("#voiceAcceptedBtn").click(function () {
+    clearInterval(timer);
+    seconds = 0;
+    minutes = 0;
+    hours = 0;
+    timer = setInterval(updateTimer, 1000);
     var callerId = $("#voiceAcceptedBtn").data("caller-id");
     if (callerId != "") {
         $.ajax({
@@ -1272,9 +1307,10 @@ $("#voiceAcceptedBtn").click(function () {
             },
             success: function (response) {
                 $(".voiceEndBtnClass").data("receiver-id", callerId);
-                $("#voiceCallStatus")
-                    .text("On call time running")
-                    .css("color", "green");
+                // Clear any existing timer
+                // $("#voiceCallStatus")
+                //     .text("On call time running")
+                //     .css("color", "green");
                 $(".allButtonsRow").hide();
                 $("#onCallButtons").show();
             },
@@ -1303,6 +1339,11 @@ window.Echo.private(`voice-call.${loginUserId}`).listen(
 
             //if voice call is ended after call complete
         } else if (event.status == "ended") {
+            // Clear the timer
+            clearInterval(timer);
+            seconds = 0;
+            minutes = 0;
+            hours = 0;
             $(".allButtonsRow").hide();
             $("#voiceCallModal").modal("hide");
 

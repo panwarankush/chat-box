@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\CallConnectionEvent;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -23,7 +24,13 @@ class CallController extends Controller
             'status' => 'ringing',
         ];
 
+        $connectionPayload = [
+            'type' => 'offer',
+            'data' =>$request->offer,
+        ];
+
         event(new VoiceCallEvent($receiverId, $payload));
+        event(new CallConnectionEvent($receiverId, $connectionPayload));
 
 
         return response()->json(['receiverName' => $receiverName->name, 'receiverStatus' => $receiverName->status]);
@@ -70,6 +77,20 @@ class CallController extends Controller
 
         event(new VoiceCallEvent($callerId, $payload));
         return response()->json(['status' => 'accepted']);
+
+    }
+
+    public function callConnection(Request $request){
+
+        if($request->type == 'offer')
+        {
+            $receiverId = $request->uid;
+            $connectionPayload = [
+                'type' => 'offer',
+                'data' =>$request->payload,
+            ];
+            event(new CallConnectionEvent($receiverId, $connectionPayload));
+        }
 
     }
 }

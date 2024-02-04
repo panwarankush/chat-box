@@ -54,6 +54,7 @@ Route::group(['middleware'=> 'auth'], function ()
     Route::post('rejectedVoiceCall', [CallController::class,'rejectedVoiceCall']);
     Route::post('endVoiceCall', [CallController::class,'endVoiceCall']);
     Route::post('acceptVoiceCall', [CallController::class,'acceptVoiceCall']);
+    Route::post('callConnection', [CallController::class,'callConnection']);
 
 
 

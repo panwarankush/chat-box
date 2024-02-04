@@ -1212,19 +1212,13 @@ function padNumber(num) {
 //----voice call connecting request----//
 $("#voiceCallBtn").click(function () {
     userId = $("#uid").val();
-    $.ajax({
-        type: "POST",
-        url: "/connectVoiceCall",
-        headers: {
-            "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
-        },
-        data: {
-            receiverId: userId,
-        },
-        success: function (response) {
-            // console.log(response);
-            // location.reload(true);
-            // Set a value
+    const postData = {
+        receiverId: userId,
+    };
+
+    axios
+        .post("http://127.0.0.1:8000/connectVoiceCall", postData)
+        .then((response) => {
             $("#voiceCallModal").modal("show");
             $("#ringingCallButtons").show();
             $("#voiceEndedBtn").data("receiver-id", userId);
@@ -1236,8 +1230,10 @@ $("#voiceCallBtn").click(function () {
             } else {
                 $("#voiceCallStatus").text("Ringing...").css("color", "green");
             }
-        },
-    });
+        })
+        .catch((error) => {
+            console.error("Error:", error);
+        });
 });
 
 //----voice call rejected by receiver end----//
@@ -1324,7 +1320,6 @@ $("#voiceAcceptedBtn").click(function () {
 window.Echo.private(`voice-call.${loginUserId}`).listen(
     "VoiceCallEvent",
     (event) => {
-        console.log(event);
         //if voice call ringing for this user
         if (event.status == "ringing") {
             $("#voiceCallModal").modal("show");
@@ -1356,11 +1351,252 @@ window.Echo.private(`voice-call.${loginUserId}`).listen(
 
             //if voice call is connected and accepted by receiver
         } else if (event.status == "accepted") {
-            $("#voiceCallStatus")
-                .text("On call time running")
-                .css("color", "green");
+            clearInterval(timer);
+            seconds = 0;
+            minutes = 0;
+            hours = 0;
+            timer = setInterval(updateTimer, 1000);
             $(".allButtonsRow").hide();
             $("#onCallButtons").show();
         }
     }
 );
+
+//------------webrtc---------------//
+
+let localStream;
+let remoteStream;
+let peerConnection;
+
+const servers = {
+    iceServers: [
+        {
+            urls: [
+                "stun:stun.l.google.com:19302",
+                "stun:stun2.l.google.com:19302",
+            ],
+        },
+    ],
+};
+
+let init = async () => {
+    handleUserJoined(3);
+
+    window.Echo.private(`call-connection.${loginUserId}`).listen(
+    "CallConnectionEvent",
+    (event) => {
+        if(event.type == 'offer'){
+            handleReceiveOffer(event.data, 3)
+        }
+    })
+    localStream = await navigator.mediaDevices.getUserMedia({
+        video: false,
+        audio: true,
+    });
+    document.getElementById("localVideo").srcObject = localStream;
+};
+
+
+
+let handleUserJoined = async (memberId) => {
+    console.log("a new user joined", memberId);
+    createOffer(memberId);
+};
+
+let handleReceiveOffer = async (message, memberId) =>{
+    message = JSON.parse(message)
+    console.log('offer received to receiver: ',message);
+}
+
+let createOffer = async (memberId) => {
+    peerConnection = new RTCPeerConnection(servers);
+
+    remoteStream = new MediaStream();
+    document.getElementById("remoteVideo").srcObject = remoteStream;
+
+    if(!localStream){
+        localStream = await navigator.mediaDevices.getUserMedia({
+            video: false,
+            audio: true,
+        });
+        document.getElementById("localVideo").srcObject = localStream;
+    }
+
+    localStream.getTracks().forEach((track) => {
+        peerConnection.addTrack(track, localStream);
+    });
+
+    peerConnection.ontrack = (event) => {
+        event.streams[0].getTracks().forEach((track) => {
+            remoteStream.addTrack(track);
+        });
+    };
+
+    peerConnection.onicecandidate = async (event) => {
+        if (event.candidate) {
+            console.log("new ice candidate", event.candidate);
+        }
+    };
+
+    let offer = await peerConnection.createOffer();
+    await peerConnection.setLocalDescription(offer);
+
+    console.log("offer", offer);
+    //send offer to receiver
+    sendSignal(memberId,offer,'offer');
+};
+
+function sendSignal(uid,data,type) {
+    const postData = {
+        type:type,
+        uid: uid,
+        payload: JSON.stringify({ data }),
+    };
+    axios
+        .post("http://127.0.0.1:8000/callConnection", postData)
+        .then((response) => {
+            console.log("offer sent successfully");
+        })
+        .catch((error) => {
+            console.error("Error in axios request:", error);
+        });
+}
+
+
+init();
+// if(loginUserId != 3){
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// const pc = new RTCPeerConnection(servers);
+// var answer;
+// localStream = new MediaStream();
+// document.getElementById("localVideo").srcObject = localStream;
+
+// pc.ontrack = (event) => {
+//     const remoteVideo = document.getElementById("remoteVideo");
+//     if (!remoteVideo.srcObject) {
+//         remoteVideo.srcObject = event.streams[0];
+//     }
+// };
+
+// console.log("1->> ", pc.iceConnectionState);
+
+// navigator.mediaDevices
+//     .getUserMedia({ video: false, audio: false })
+//     .then((stream) => {
+//         document.getElementById("localVideo").srcObject = stream;
+//         localStream.getTracks().forEach((track) => {
+//             pc.addTrack(track, localStream);
+//         });
+//         pc.createOffer();
+//     })
+//     .then((offer) => pc.setLocalDescription(offer))
+//     .then(() => {
+//         console.log("2->>", pc.iceConnectionState);
+//         // You can listen for the 'icecandidate' event to collect ICE candidates
+//         remoteStream = new MediaStream();
+//         document.getElementById("remoteVideo").srcObject = remoteStream;
+
+//         localStream.getTracks().forEach((track) => {
+//             pc.addTrack(track, localStream);
+//         });
+
+//         pc.ontrack = (event) => {
+//             event.streams[0].getAudioTracks.forEach((track) => {
+//                 remoteStream.addTrack(track);
+//             });
+//         };
+//         console.log("3->>", pc.iceConnectionState);
+//         const postData = {
+//             receiverId: userId,
+//             offer: JSON.stringify({ offer: pc.localDescription }),
+//         };
+//     });
+
+//     //-----------call connection events-------------//
+// window.Echo.private(`call-connection.${loginUserId}`).listen(
+//     "CallConnectionEvent",
+//     (event) => {
+//         if (event.type == "offer") {
+//             //--offer received to receiver--//
+//             const receivedData = JSON.parse(event.data);
+//             // Extract the offer SDP
+//             const receivedOffer = receivedData.offer;
+//             console.log("offer received: ");
+
+//             pc.setRemoteDescription(new RTCSessionDescription(receivedOffer))
+//                 .then(() => {
+//                     console.log("Offer set as remote description successfully");
+//                     // Step 2: Create an answer
+//                     return pc.createAnswer();
+//                 })
+//                 .then((answer) => {
+//                     // Step 3: Set the answer as the local description
+//                     return pc.setLocalDescription(answer);
+//                 })
+//                 .then(() => {
+//                     // At this point, the answer is ready, and you can send it back to the caller
+//                     const localDescription = pc.localDescription;
+//                     console.log(
+//                         "Answer created and set as local description:",
+//                         localDescription
+//                     );
+//                     var callerId = $("#voiceAcceptedBtn").data("caller-id");
+//                     const postData = {
+//                         receiverId: callerId,
+//                         answer: JSON.stringify({ answer: localDescription }),
+//                     };
+//                     axios
+//                         .post("http://127.0.0.1:8000/callConnection", postData)
+//                         .then((response) => {
+//                             console.log("answer sent successfully");
+//                         })
+//                         .catch((error) => {
+//                             console.error("Error:", error);
+//                         });
+
+//                     // Send the answer to the caller using your signaling mechanism
+//                     // signalingChannel.send(JSON.stringify({ 'answer': localDescription }));
+//                 })
+//                 .catch((error) => {
+//                     console.error("Error creating or setting answer:", error);
+//                 });
+//         } else if (event.type == "answer") {
+//             console.log("answer received");
+//             // Assume 'receivedMessage' is the received JSON string through signaling
+//             const receivedAnswer = JSON.parse(event.data);
+
+//             // Extract the received answer SDP
+//             const receivedAnswerData = receivedAnswer.answer;
+
+//             // Assuming 'peerConnection' is the RTCPeerConnection on the caller side
+//             pc.setRemoteDescription(
+//                 new RTCSessionDescription(receivedAnswerData)
+//             ).then(() => {
+//                 console.log("Answer set as remote description successfully");
+//                 console.log("1->> ", pc.iceConnectionState);
+//             });
+//         }
+//     }
+// );

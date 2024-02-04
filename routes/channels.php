@@ -28,3 +28,12 @@ Broadcast::channel('voice-call.{eventReceiverId}', function (User $user, int $ev
     // Add your authorization logic here
     // For example, you might check if $user->id is one of $callerUserId or $receiverUserId
 });
+
+Broadcast::channel('call-connection.{eventReceiverId}', function (User $user, int $eventReceiverId)
+{
+    if($user->id === $eventReceiverId){
+        return true; // Return true if authorized, false otherwise
+    }else{
+        return false;
+    }
+});

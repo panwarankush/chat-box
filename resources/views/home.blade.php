@@ -138,7 +138,8 @@
 
                     <div class="row mb-2 pt-5 allButtonsRow" id="ringingCallButtons" style="display: none">
                         <div class="col-12 text-center">
-                            <button type="button" class="btn btn-danger rounded-circle btn-lg p-3 voiceEndBtnClass" id="voiceEndedBtn" data-receiver-id="" data-bs-dismiss="modal" aria-label="Close">
+                            <button type="button" class="btn btn-danger rounded-circle btn-lg p-3 voiceEndBtnClass"
+                                id="voiceEndedBtn" data-receiver-id="" data-bs-dismiss="modal" aria-label="Close">
                                 <i class="fa-solid fa-phone fa-xl p-1" style="transform: rotate(136deg)"></i>
                             </button>
                         </div>
@@ -146,12 +147,14 @@
 
                     <div class="row mb-2 pt-5 allButtonsRow" id="incomeCallButtons" style="display: none">
                         <div class="col-6 text-center">
-                            <button type="button" class="btn btn-success rounded-circle btn-lg p-3" id="voiceAcceptedBtn"  data-caller-id="">
+                            <button type="button" class="btn btn-success rounded-circle btn-lg p-3"
+                                id="voiceAcceptedBtn" data-caller-id="">
                                 <i class="fa-solid fa-phone fa-xl p-1"></i>
                             </button>
                         </div>
                         <div class="col-6 text-center">
-                            <button type="button" class="btn btn-danger rounded-circle btn-lg p-3" id="voiceRejectedBtn" data-caller-id="" data-bs-dismiss="modal" aria-label="Close">
+                            <button type="button" class="btn btn-danger rounded-circle btn-lg p-3" id="voiceRejectedBtn"
+                                data-caller-id="" data-bs-dismiss="modal" aria-label="Close">
                                 <i class="fa-solid fa-phone fa-xl p-1" style="transform: rotate(136deg)"></i>
                             </button>
                         </div>
@@ -164,7 +167,8 @@
                             </button>
                         </div>
                         <div class="col-2 text-center">
-                            <button type="button" class="btn btn-danger rounded-circle btn-lg p-3 voiceEndBtnClass" data-receiver-id="" data-bs-dismiss="modal" aria-label="Close">
+                            <button type="button" class="btn btn-danger rounded-circle btn-lg p-3 voiceEndBtnClass"
+                                data-receiver-id="" data-bs-dismiss="modal" aria-label="Close">
                                 <i class="fa-solid fa-phone fa-xl p-1" style="transform: rotate(136deg)"></i>
                             </button>
                         </div>
@@ -204,7 +208,7 @@
                             style="cursor:pointer;"></i>
                     </span>
                     <span class="float-end pe-3" id="voiceCallSpan" style="display:none">
-                            <i class="fa-solid fa-phone fa-lg text-secondary" id="voiceCallBtn" style="cursor: pointer;"></i>
+                        <i class="fa-solid fa-phone fa-lg text-secondary" id="voiceCallBtn" style="cursor: pointer;"></i>
                     </span>
                 </div>
             </div>
@@ -316,6 +320,12 @@
 
         </div>
     </section>
+    <div>
+        <video class="bg-warning h-50" style="width:340px" id="localVideo" autoplay muted playsinline>
+        </video>
+        <video class="bg-warning h-50" style="width:340px" id="remoteVideo" autoplay playsinline>
+        </video>
+    </div>
 @endsection
 
 @push('styles')
@@ -330,6 +340,12 @@
 
 @push('scripts')
     {{-- <script src="https://js.pusher.com/4.1/pusher.min.js"></script> --}}
+    {{-- <script src="https://cdn.jsdelivr.net/npm/simple-peer@16"></script> --}}
+    <script src="https://cdn.socket.io/4.3.2/socket.io.min.js"></script>
+    <!-- Include Axios via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+
 
     <script>
         loginUserId = {{ auth()->id() }};

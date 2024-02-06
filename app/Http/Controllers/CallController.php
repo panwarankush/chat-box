@@ -82,15 +82,14 @@ class CallController extends Controller
 
     public function callConnection(Request $request){
 
-        if($request->type == 'offer')
-        {
+
             $receiverId = $request->uid;
             $connectionPayload = [
-                'type' => 'offer',
+                'type' => $request->type,
                 'data' =>$request->payload,
             ];
             event(new CallConnectionEvent($receiverId, $connectionPayload));
-        }
+        
 
     }
 }

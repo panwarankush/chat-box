@@ -119,19 +119,31 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content bg-info-subtle">
                 <div class="modal-header">
-                    <h5 class="modal-title text-dark" id="">Voice Call</h5>
+                    <h5 class="modal-title text-dark" id="">Call</h5>
                 </div>
                 <div class="modal-body">
-                    <div class="row mt-5">
-                        <div class="col-12 text-center">
-                            <div class="h1" id="voiceCallerName">
-                                {{-- caller or receiver name --}}
+                    <div id="beforeConnecting">
+                        <div class="row mt-5">
+                            <div class="col-12 text-center">
+                                <div class="h1" id="voiceCallerName">
+                                    {{-- caller or receiver name --}}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-5 mt-2">
+                            <div class="col-12 text-center">
+                                <div class="h6" id="voiceCallStatus">
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div class="row mb-5 mt-2">
-                        <div class="col-12 text-center">
-                            <div class="h6" id="voiceCallStatus">
+                    <div class="my-5" id="afterConnecting"  style="display: none">
+                        <div class="row">
+                            <div class="col-6">
+                                local video
+                            </div>
+                            <div class="col-6">
+                                remote video
                             </div>
                         </div>
                     </div>

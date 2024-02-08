@@ -1202,7 +1202,7 @@ function updateTimer() {
 
     const formattedTime =
         padNumber(hours) + ":" + padNumber(minutes) + ":" + padNumber(seconds);
-    document.getElementById("voiceCallStatus").innerText = formattedTime;
+    document.getElementById("voiceCallTimer").innerText = formattedTime;
 }
 
 function padNumber(num) {
@@ -1257,7 +1257,12 @@ $("#voiceRejectedBtn").click(function () {
 //----voice call ended by caller before connect----//
 $(".voiceEndBtnClass").click(function () {
     var receiverId = $("#voiceEndedBtn").data("receiver-id");
-    console.log(receiverId);
+    closeConnection();
+    console.log('receiver id >> ',receiverId);
+    $("#beforeConnecting").show();
+    $("#afterConnecting").hide();
+    $(".allButtonsRow").hide();
+    $("#voiceCallModal").modal("hide");
     if (receiverId != "") {
         $.ajax({
             type: "POST",
@@ -1274,9 +1279,6 @@ $(".voiceEndBtnClass").click(function () {
                 seconds = 0;
                 minutes = 0;
                 hours = 0;
-
-                $(".allButtonsRow").hide();
-                $("#voiceCallModal").modal("hide");
             },
         });
     }
@@ -1290,7 +1292,8 @@ $("#voiceAcceptedBtn").click(function () {
     hours = 0;
     timer = setInterval(updateTimer, 1000);
     var callerId = $("#voiceAcceptedBtn").data("caller-id");
-    // init();
+    //initialize video call
+    init();
     if (callerId != "") {
         $.ajax({
             type: "POST",
@@ -1303,12 +1306,16 @@ $("#voiceAcceptedBtn").click(function () {
             },
             success: function (response) {
                 $(".voiceEndBtnClass").data("receiver-id", callerId);
-                // Clear any existing timer
-                // $("#voiceCallStatus")
-                //     .text("On call time running")
-                //     .css("color", "green");
+
+                console.log('loginUsername - ', response.payload.loginUserName);
                 $(".allButtonsRow").hide();
                 $("#onCallButtons").show();
+                $("#beforeConnecting").hide();
+                $("#afterConnecting").show();
+                $("#localPersonName").text(response.payload.loginUserName);
+                $("#remotePersonName").text(response.payload.callerName);
+
+
             },
         });
     }
@@ -1338,6 +1345,9 @@ window.Echo.private(`voice-call.${loginUserId}`).listen(
             seconds = 0;
             minutes = 0;
             hours = 0;
+            closeConnection();
+            $("#beforeConnecting").show();
+            $("#afterConnecting").hide();
             $(".allButtonsRow").hide();
             $("#voiceCallModal").modal("hide");
 
@@ -1357,6 +1367,15 @@ window.Echo.private(`voice-call.${loginUserId}`).listen(
             timer = setInterval(updateTimer, 1000);
             $(".allButtonsRow").hide();
             $("#onCallButtons").show();
+            $("#beforeConnecting").hide();
+            $("#afterConnecting").show();
+            $("#localPersonName").text(event.callerName);
+            $("#remotePersonName").text(event.loginUserName);
+            //initialize video call
+            init()
+            userId = $("#uid").val();
+            console.log('send createoffer() to',userId);
+            createOffer(userId);
         }
     }
 );
@@ -1385,40 +1404,30 @@ window.Echo.private(`call-connection.${loginUserId}`).listen(
     })
 
 let init = async () => {
-    if (loginUserId == 1) {
-            createOffer(3);
-        }
     localStream = await navigator.mediaDevices.getUserMedia({
         video: true,
-        audio: false,
+        audio: true,
     });
     document.getElementById("localVideo").srcObject = localStream;
+    console.log('local stream is initialized');
 };
-
-$("#voiceCallBtn").click(function () {
-    // init();
-    // if (loginUserId == 1) {
-    //     createOffer(3);
-    // }
-})
 
 
 
 let handleMessageFromPeer = async (event) => {
     message = JSON.parse(event.data)
-
     if (event.type == 'offer') {
-        console.log('offer received');
-        console.log('message >>', message.data);
-        createAnswer(1, message.data);
+        console.log('offer received from', event.eventSender);
+        console.log('message >>', event);
+        createAnswer(event.eventSender, message.data);
 
     }
     if (event.type == 'answer') {
-        console.log('answer received >>', message.data);
+        console.log('answer received from >>',event.eventSender);
         addAnswer(message.data);
     }
     if (event.type == 'candidate') {
-        console.log('candidate received >>',message.data);
+        console.log('candidate received from >>',event.eventSender);
         if (peerConnection) {
             peerConnection.addIceCandidate(message.data)
         }
@@ -1435,7 +1444,7 @@ let createPeerConnection = async (memberId) => {
     if (!localStream) {
         localStream = await navigator.mediaDevices.getUserMedia({
             video: true,
-            audio: false,
+            audio: true,
         });
         document.getElementById("localVideo").srcObject = localStream;
     }
@@ -1458,6 +1467,8 @@ let createPeerConnection = async (memberId) => {
     };
 }
 
+
+
 let createOffer = async (memberId) => {
     await createPeerConnection(memberId);
     let offer = await peerConnection.createOffer();
@@ -1474,7 +1485,7 @@ let createAnswer = async (memberId, offer) => {
     await peerConnection.setRemoteDescription(offer);
     let answer = await peerConnection.createAnswer()
     await peerConnection.setLocalDescription(answer)
-    sendSignal(1, answer, 'answer');
+    sendSignal(memberId, answer, 'answer');
 };
 
 let addAnswer = async (answer) => {
@@ -1493,12 +1504,53 @@ function sendSignal(uid, data, type) {
     axios
         .post("http://127.0.0.1:8000/callConnection", postData)
         .then((response) => {
-            console.log(type, "sent successfully");
+            console.log(type, "sent successfully to", uid);
         })
         .catch((error) => {
             console.error("Error in axios request:", error);
         });
 }
 
+let toggleMic = async () => {
+    let audioTrack = localStream.getTracks().find(track => track.kind === 'audio')
 
-init();
+    if(audioTrack.enabled){
+        audioTrack.enabled = false
+        document.getElementById('micToggleBtn').style.backgroundColor = 'rgb(119, 119, 119)'
+    }else{
+        audioTrack.enabled = true
+        document.getElementById('micToggleBtn').style.backgroundColor = 'rgb(21 119 174)'
+    }
+}
+
+let toggleCamera = async () => {
+    let videoTrack = localStream.getTracks().find(track => track.kind === 'video')
+
+    if(videoTrack.enabled){
+        videoTrack.enabled = false
+        document.getElementById('cameraToggleBtn').style.backgroundColor = 'rgb(119, 119, 119)'
+    }else{
+        videoTrack.enabled = true
+        document.getElementById('cameraToggleBtn').style.backgroundColor = 'rgb(21 119 174)'
+    }
+}
+
+
+function closeConnection() {
+    if(peerConnection){
+        // peerConnection.removeTrack(connectedUid);
+        peerConnection.close();
+        if (localStream) {
+            localStream.getTracks().forEach(track => {
+                track.stop();
+            });
+        }
+        console.log('connection closed');
+    }
+}
+
+document.getElementById('cameraToggleBtn').addEventListener('click', toggleCamera)
+document.getElementById('micToggleBtn').addEventListener('click', toggleMic)
+
+
+// init();

@@ -115,7 +115,7 @@
 
     {{-- --------- Voice Call modal start -------------- --}}
     <div class="modal fade" id="voiceCallModal" tabindex="-1" role="dialog" aria-labelledby="voiceCall"
-        aria-hidden="true">
+        aria-hidden="true" style="--bs-modal-width: 700px;">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content bg-info-subtle">
                 <div class="modal-header">
@@ -137,13 +137,23 @@
                             </div>
                         </div>
                     </div>
-                    <div class="my-5" id="afterConnecting"  style="display: none">
+                    <div class="mt-4 mb-1" id="afterConnecting"   style="display: none">
                         <div class="row">
-                            <div class="col-6">
-                                local video
+                            <div class="col-6 text-center mb-2">
+                                <span class="h5" id="localPersonName"></span>
+                            </div>
+                            <div class="col-6 text-center mb-2">
+                                <span class="h5" id="remotePersonName"></span>
+                            </div>
+                            <div class="col-6 text-center">
+                                <video class="bg-secondary h-100" style="width:320px" id="localVideo" autoplay playsinline>
+                                </video>
                             </div>
                             <div class="col-6">
-                                remote video
+                                <video class="bg-secondary h-100" style="width:320px" id="remoteVideo" autoplay playsinline>
+                                </video>
+                            </div>
+                            <div class="h5 text-center mt-3 text-dark" id="voiceCallTimer">
                             </div>
                         </div>
                     </div>
@@ -174,8 +184,8 @@
 
                     <div class="row mb-2 pt-5 allButtonsRow" id="onCallButtons" style="display: none">
                         <div class="col-5 text-center my-auto">
-                            <button class="btn btn-secondary roundded-circle btn-lg">
-                                <i class="fa-solid fa-microphone-slash"></i>
+                            <button class="btn btn-secondary roundded-circle btn-lg" id="micToggleBtn"  style="background-color:rgb(21 119 174)">
+                                <i class="fa-solid fa-microphone"></i>
                             </button>
                         </div>
                         <div class="col-2 text-center">
@@ -185,8 +195,8 @@
                             </button>
                         </div>
                         <div class="col-5 text-center my-auto">
-                            <button class="btn btn-secondary roundded-circle btn-lg">
-                                <i class="fa-solid fa-phone-volume"></i>
+                            <button class="btn btn-secondary roundded-circle btn-lg" id="cameraToggleBtn" style="background-color:rgb(21 119 174);">
+                                <i class="fa-solid fa-video"></i>
                             </button>
                         </div>
                     </div>
@@ -333,10 +343,10 @@
         </div>
     </section>
     <div>
-        <video class="bg-warning h-50" style="width:340px" id="localVideo" autoplay muted playsinline>
+        {{-- <video class="bg-warning h-50" style="width:340px" id="localVideo" autoplay muted playsinline>
         </video>
         <video class="bg-warning h-50" style="width:340px" id="remoteVideo" autoplay playsinline>
-        </video>
+        </video> --}}
     </div>
 @endsection
 

@@ -161,7 +161,7 @@
                     <div class="row mb-2 pt-5 allButtonsRow" id="ringingCallButtons" style="display: none">
                         <div class="col-12 text-center">
                             <button type="button" class="btn btn-danger rounded-circle btn-lg p-3 voiceEndBtnClass"
-                                id="voiceEndedBtn" data-receiver-id="" data-bs-dismiss="modal" aria-label="Close">
+                                id="voiceEndedBtn" data-call-status="" data-button-type="callEndBeforeConnect" data-receiver-id="" data-bs-dismiss="modal" aria-label="Close">
                                 <i class="fa-solid fa-phone fa-xl p-1" style="transform: rotate(136deg)"></i>
                             </button>
                         </div>
@@ -189,8 +189,8 @@
                             </button>
                         </div>
                         <div class="col-2 text-center">
-                            <button type="button" class="btn btn-danger rounded-circle btn-lg p-3 voiceEndBtnClass"
-                                data-receiver-id="" data-bs-dismiss="modal" aria-label="Close">
+                            <button type="button" class="btn btn-danger rounded-circle btn-lg p-3 voiceEndBtnClass" id="endBtnAfterCall"
+                                data-receiver-id="" data-button-type="callEndAfterConnect"  data-bs-dismiss="modal" aria-label="Close">
                                 <i class="fa-solid fa-phone fa-xl p-1" style="transform: rotate(136deg)"></i>
                             </button>
                         </div>

@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Events\CallConnectionEvent;
 use App\Models\User;
+use App\Models\Call;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Events\VoiceCallEvent;
+use Illuminate\Support\Carbon;
 
 
 class CallController extends Controller
@@ -16,7 +18,7 @@ class CallController extends Controller
         $callerId = Auth::user()->id;
         $callerName = Auth::user()->name;
         $receiverId = $request->receiverId;
-        $receiverName = User::select('name', 'status')->where('id', $receiverId)->first();
+        $receiver = User::select('name', 'status')->where('id', $receiverId)->first();
 
         $payload = [
             'callerId' => $callerId,
@@ -24,9 +26,31 @@ class CallController extends Controller
             'status' => 'ringing',
         ];
 
-        event(new VoiceCallEvent($receiverId, $payload));
+        $isReceiverOnCall = Call::where(function ($query) use ($receiverId) {
+            $query->where('receiverId', $receiverId)
+                ->orWhere('callerId', $receiverId);
+        })
+            ->where('status', 'pending')
+            ->exists();
 
-        return response()->json(['receiverName' => $receiverName->name, 'receiverStatus' => $receiverName->status]);
+        if ($isReceiverOnCall) {
+            // on call
+            $receiverStatus = 'onCall';
+        } else {
+            $newCall = new Call;
+            $newCall->callerId = $callerId;
+            $newCall->receiverId = $receiverId;
+            if ($receiver->status == 'offline') {
+                $receiverStatus = 'offline';
+                $newCall->status = 'complete';
+            } else {
+                $receiverStatus = 'online';
+            }
+            $newCall->save();
+            event(new VoiceCallEvent($receiverId, $payload));
+        }
+
+        return response()->json(['receiverName' => $receiver->name, 'receiverStatus' => $receiverStatus]);
     }
     public function rejectedVoiceCall(Request $request)
     {
@@ -37,6 +61,9 @@ class CallController extends Controller
             'callerName' => null,
             'status' => 'rejected',
         ];
+
+        Call::where('receiverId', Auth::id())->where('status','pending')
+            ->update(['status' => 'complete','type' => 'rejected']);
 
         event(new VoiceCallEvent($callerId, $payload));
 
@@ -52,6 +79,21 @@ class CallController extends Controller
             'status' => 'ended',
         ];
 
+        if($request->buttonType == 'callEndBeforeConnect')
+        {
+            Call::where('callerId', Auth::id())->where('status','pending')
+            ->update(['status' => 'complete']);
+
+        }elseif($request->buttonType == 'callEndAfterConnect')
+        {
+            $currentTimestamp = date('Y-m-d H:i:s', strtotime('now'));
+            Call::where(function ($query) use ($callerId) {
+                $query->where('callerId', $callerId)
+                      ->orWhere('receiverId', $callerId);
+            })
+            ->where('status', 'pending')
+            ->update(['status' => 'complete', 'type' => 'accepted', 'endTime' => $currentTimestamp]);
+        }
         event(new VoiceCallEvent($callerId, $payload));
 
         return response()->json(['status' => 'rejected']);
@@ -69,7 +111,7 @@ class CallController extends Controller
         ];
 
         event(new VoiceCallEvent($callerId, $payload));
-        return response()->json(['status' => 'accepted','payload' => $payload]);
+        return response()->json(['status' => 'accepted', 'payload' => $payload]);
     }
 
     public function callConnection(Request $request)

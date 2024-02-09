@@ -1209,6 +1209,7 @@ function padNumber(num) {
     return num.toString().padStart(2, "0");
 }
 
+$("#voiceEndedBtn").data("call-status", '');
 //----voice call connecting request----//
 $("#voiceCallBtn").click(function () {
     userId = $("#uid").val();
@@ -1222,12 +1223,20 @@ $("#voiceCallBtn").click(function () {
             $("#ringingCallButtons").show();
             $("#voiceEndedBtn").data("receiver-id", userId);
             $("#voiceCallerName").text(response.data.receiverName);
-            if (response.data.receiverStatus == "offline") {
+
+            if (response.data.receiverStatus == "onCall") {
                 $("#voiceCallStatus")
-                    .text("Call not connected !!")
+                    .text("On Another Call !!")
                     .css("color", "red");
+                $("#voiceEndedBtn").data("call-status", 'onCall');
+            }else if (response.data.receiverStatus == "offline") {
+                $("#voiceCallStatus")
+                    .text("Receiver Is Offline !!")
+                    .css("color", "red");
+                $("#voiceEndedBtn").data("call-status", 'offline');
             } else {
                 $("#voiceCallStatus").text("Ringing...").css("color", "green");
+                $("#voiceEndedBtn").data("call-status", '');
             }
         })
         .catch((error) => {
@@ -1238,6 +1247,7 @@ $("#voiceCallBtn").click(function () {
 //----voice call rejected by receiver end----//
 $("#voiceRejectedBtn").click(function () {
     var retrievedCallerId = $("#voiceRejectedBtn").data("caller-id");
+
     $.ajax({
         type: "POST",
         url: "/rejectedVoiceCall",
@@ -1257,13 +1267,18 @@ $("#voiceRejectedBtn").click(function () {
 //----voice call ended by caller before connect----//
 $(".voiceEndBtnClass").click(function () {
     var receiverId = $("#voiceEndedBtn").data("receiver-id");
+    var callStatusData = $("#voiceEndedBtn").data("call-status");
+
+    console.log('Call status data >>', callStatusData);
+
+    var buttonType = $(this).data('button-type');
     closeConnection();
     console.log('receiver id >> ',receiverId);
     $("#beforeConnecting").show();
     $("#afterConnecting").hide();
     $(".allButtonsRow").hide();
     $("#voiceCallModal").modal("hide");
-    if (receiverId != "") {
+    if (receiverId != "" && callStatusData=='') {
         $.ajax({
             type: "POST",
             url: "/endVoiceCall",
@@ -1272,6 +1287,7 @@ $(".voiceEndBtnClass").click(function () {
             },
             data: {
                 callerId: receiverId,
+                buttonType:buttonType,
             },
             success: function (response) {
                 // Clear the timer

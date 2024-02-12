@@ -1,3 +1,5 @@
+// const { default: axios } = require("axios");
+
 const msgerForm = get(".msger-inputarea");
 const msgerInput = get(".msger-input");
 const msgerChat = get(".msger-chat");
@@ -57,7 +59,7 @@ $(document).ready(function () {
         $("#settingSpan").hide();
         $("#groupExitBtn").hide();
         var groupName = $(this).find(".col-lg-7").text();
-        $("#openedChat span:first").text(groupName);
+        $("#nameSpan").text(groupName);
         $("#chatType").val("personal");
         $('span[data-uid="' + userId + '"]').text("");
         // console.log(userId);
@@ -640,7 +642,7 @@ $("#broadcast").click(function () {
     $("#voiceCallSpan").hide();
     $("#groupExitBtn").hide();
     var groupName = $(this).find(".col-lg-7").text();
-    $("#openedChat span:first").text(groupName);
+    $("#nameSpan").text(groupName);
     userId = 0;
     $.ajax({
         type: "GET",
@@ -848,7 +850,7 @@ $(".group-chats").click(function () {
     $("#openedChat").show();
     $("#voiceCallSpan").hide();
     var groupName = $(this).find(".col-lg-7").text();
-    $("#openedChat span:first").text(groupName);
+    $("#nameSpan").text(groupName);
 
     $.ajax({
         type: "POST",
@@ -1217,7 +1219,7 @@ $("#voiceCallBtn").click(function () {
         receiverId: userId,
     };
     axios
-        .post("http://127.0.0.1:8000/connectVoiceCall", postData)
+        .post(baseUrl+'/connectVoiceCall', postData)
         .then((response) => {
             $("#voiceCallModal").modal("show");
             $("#ringingCallButtons").show();
@@ -1570,3 +1572,70 @@ document.getElementById('micToggleBtn').addEventListener('click', toggleMic)
 
 
 // init();
+
+
+//------------------------call history-------------------//
+$('#callHistory').click(function(){
+    var callType,callColor,callHTML,callTiming,callerDisplayName;
+    $("#callHistoryModal").modal("show");
+    axios
+    .get(baseUrl+'/callHistory')
+    .then(response => {
+        response.data.data.forEach(row => {
+            // console.log(row);
+            callTiming = row.type;
+            if(row.type == 'missed'){
+                callColor = 'text-danger'
+            }else if(row.type == 'rejected'){
+                callColor = 'text-danger'
+            }else{
+                callColor = 'text-success';
+                callTiming = row.callTime
+            }
+
+            if (row.callerId == loginUserId) {
+                callType = `<i class="fa-solid fa-square-up-right ${callColor}" id="outgoingCall"  style="font-size: xxx-large;"></i>`;
+                callerDisplayName = row.callee.name;
+            } else {
+                callType = `<i class="fa-solid fa-square-up-right fa-rotate-180 ${callColor}" id="incomingCall" style="font-size: xxx-large;"></i>`;
+                callerDisplayName = row.caller.name;
+            }
+
+            // Assuming you have received the created_at timestamp from the database
+            const createdAt = new Date(row.created_at) // Example timestamp
+
+            // Format the date and time
+            const formattedDate = createdAt.toLocaleDateString('en-US', {
+                day: '2-digit',
+                month: 'long',
+            });
+            const formattedTime = createdAt.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            });
+
+            // Concatenate the formatted date and time
+            const formattedDateTime = `${formattedDate}, ${formattedTime}`;
+
+
+
+
+            callHTML = `<div class="row mb-4">
+                            <div class="col-2">
+                                ${callType}
+                            </div>
+                            <div class="col-7">
+                                <span class="fs-5 text-dark fw-bold">${callerDisplayName}</span>
+                                <div class="fs-6 text-secondary" style="margin-top: -3px">${formattedDateTime}</div>
+                            </div>
+                            <div class="col-3">
+                                <span class="${callColor}">${callTiming}</span>
+                            </div>
+                        </div>`;
+
+            document.getElementById('callHistoryDiv').insertAdjacentHTML('afterbegin', callHTML);
+
+        })
+    })
+});

@@ -86,17 +86,27 @@ class CallController extends Controller
 
         }elseif($request->buttonType == 'callEndAfterConnect')
         {
-            $currentTimestamp = date('Y-m-d H:i:s', strtotime('now'));
-            Call::where(function ($query) use ($callerId) {
+            // $currentTimestamp = date('Y-m-d H:i:s', strtotime('now'));
+            $currentCall = Call::where(function ($query) use ($callerId) {
                 $query->where('callerId', $callerId)
                       ->orWhere('receiverId', $callerId);
             })
-            ->where('status', 'pending')
-            ->update(['status' => 'complete', 'type' => 'accepted', 'endTime' => $currentTimestamp]);
+            ->where('status', 'pending')->first();
+
+            $createdAt = Carbon::parse($currentCall->created_at);
+            $currentTime = Carbon::now();
+            $timeDifference = $createdAt->diff($currentTime);
+            $formattedDifference = $timeDifference->format('%H:%I:%S');
+            $currentCall->update([
+                'status' => 'complete',
+                'type' => 'accepted',
+                'callTime' => $formattedDifference
+            ]);
+
         }
         event(new VoiceCallEvent($callerId, $payload));
 
-        return response()->json(['status' => 'rejected']);
+        return response()->json(['status' => 'rejected' , 'message' => $createdAt . 'formated diff - '. $formattedDifference]);
     }
     public function acceptVoiceCall(Request $request)
     {
@@ -123,5 +133,18 @@ class CallController extends Controller
             'data' => $request->payload,
         ];
         event(new CallConnectionEvent($receiverId, $connectionPayload));
+    }
+
+    public function callHistory(){
+        $loginId = Auth::id();
+
+        $callHistory = Call::select('id','callerId','receiverId','type','created_at','callTime')
+        ->with('caller:id,name')->with('callee:id,name')
+        ->where(function($query) use ($loginId){
+            $query->where('callerId',$loginId)
+            ->orWhere('receiverId', $loginId);
+        })->get();
+
+        return response()->json(['status' => 'success', 'data' => $callHistory], 200);
     }
 }

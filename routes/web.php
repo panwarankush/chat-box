@@ -57,6 +57,10 @@ Route::group(['middleware'=> 'auth'], function ()
     Route::post('callConnection', [CallController::class,'callConnection']);
 
 
+    //for call history
+    Route::get('callHistory', [CallController::class,'callHistory']);
+
+
 
 
 });

@@ -208,6 +208,22 @@
 
     {{-- --------- Voice Call modal end -------------- --}}
 
+        {{-- --------- call history modal start -------------- --}}
+        <div class="modal fade" id="callHistoryModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+        aria-hidden="true"  style="--bs-modal-width: 400px;">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title text-dark" id="">Call History</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="callHistoryDiv">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- --------- call history modal end -------------- --}}
 
     <section class="msger">
         <header class="msger-header">
@@ -221,7 +237,10 @@
                     </div>
                 </div>
                 <div class="col-9 text-center" id="openedChat" style="display: none">
-                    <span class="text-dark fw-bold"></span>
+                    <span class="float-start">
+                        <i class="fa-solid fa-clock-rotate-left fa-lg text-secondary" id="callHistory" style="cursor: pointer;"></i>
+                    </span>
+                    <span class="text-dark fw-bold" id="nameSpan"></span>
                     <span class="float-end pe-3" id="settingSpan" style="display:none"><i class="fa-solid fa-gear fa-lg"
                             id="setting-btn" style="cursor: pointer;"></i>
                     </span>
@@ -229,7 +248,7 @@
                         <i class="fa-solid fa-right-from-bracket fa-lg text-danger" id="groupExit"
                             style="cursor:pointer;"></i>
                     </span>
-                    <span class="float-end pe-3" id="voiceCallSpan" style="display:none">
+                    <span class="float-end pe-2" id="voiceCallSpan" style="display:none">
                         <i class="fa-solid fa-phone fa-lg text-secondary" id="voiceCallBtn" style="cursor: pointer;"></i>
                     </span>
                 </div>
@@ -372,6 +391,7 @@
     <script>
         loginUserId = {{ auth()->id() }};
         var dynamicURL = "{{ asset('uploads/') }}";
+        const baseUrl = '{{ url('/') }}';
     </script>
 
     <script src="{{ asset('js/chat.js') }}"></script>
